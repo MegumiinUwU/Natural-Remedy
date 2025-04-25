@@ -1,130 +1,51 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Natural Remedy Finder</title>
-  <link rel="stylesheet" href="{% static 'css/mainAuth.css' %}">
-  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
-  <link rel="stylesheet" href="{% static 'css/animations.css' %}">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Inter:wght@400;500;600&display=swap">
-</head>
-<body>
-  <div class="auth-page">
-    <div class="leaf-background"></div>
-    
-    <div class="auth-container">
-      <div class="header">
-        <h1 class="title">Natural Remedy<br>Finder</h1>
-        <p class="subtitle">Discover natural solutions for your wellness journey</p>
-      </div>
-      
-      <div class="form-container" id="formContainer">
-        <div class="leaf-decoration top-right"></div>
-        <div class="leaf-decoration bottom-left"></div>
-        
-        <div class="auth-tabs">
-          <div class="tabs-container">
-            <button id="loginTab" class="tab active">Sign In</button>
-            <button id="registerTab" class="tab">Register</button>
-          </div>
-          <div class="tab-indicator"></div>
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-4 p-sm-5">
+                    <div class="text-center mb-4">
+                        <img src="{% static 'images/logo.png' %}" alt="Natural Remedy Finder Logo" height="60">
+                        <h2 class="mt-3">Log In</h2>
+                        <p class="text-muted">Welcome back to Natural Remedy Finder</p>
+                    </div>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        Your username and password didn't match. Please try again.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'login' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" id="id_username" autofocus required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_password" class="form-label">Password</label>
+                            <input type="password" name="password" class="form-control" id="id_password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" name="remember" id="remember" class="form-check-input">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Log In</button>
+                        </div>
+                        <input type="hidden" name="next" value="{{ next }}">
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+                        <p><a href="{% url 'password_reset' %}">Forgot your password?</a></p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="loginForm" class="auth-form active">
-          <h2 class="form-title">Welcome Back</h2>
-          
-          <form id="loginFormElement">
-            <div class="form-field">
-              <label for="loginEmail">Email <span class="required">*</span></label>
-              <input type="email" id="loginEmail" placeholder="your@email.com" required>
-            </div>
-            
-            <div class="form-field password-field">
-              <label for="loginPassword">Password <span class="required">*</span></label>
-              <input type="password" id="loginPassword" placeholder="••••••••" required>
-              <button type="button" class="password-toggle" data-for="loginPassword">
-                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="eye-off-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            
-            <div class="form-options">
-              <div class="remember-me">
-                <input type="checkbox" id="rememberMe">
-                <label for="rememberMe">Remember me</label>
-              </div>
-              <a href="#" class="forgot-password">Forgot password?</a>
-            </div>
-            
-            <button type="submit" class="btn-primary">Sign In</button>
-          </form>
-        </div>
-        <div id="registerForm" class="auth-form">
-          <h2 class="form-title">Create Account</h2>
-          
-          <form id="registerFormElement">
-            <div class="form-field">
-              <label for="fullName">Full Name <span class="required">*</span></label>
-              <input type="text" id="fullName" placeholder="John Doe" required>
-            </div>
-            
-            <div class="form-field">
-              <label for="registerEmail">Email <span class="required">*</span></label>
-              <input type="email" id="registerEmail" placeholder="your@email.com" required>
-            </div>
-            
-            <div class="form-field password-field">
-              <label for="registerPassword">Password <span class="required">*</span></label>
-              <input type="password" id="registerPassword" placeholder="••••••••" required>
-              <button type="button" class="password-toggle" data-for="registerPassword">
-                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="eye-off-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            
-            <div class="form-field password-field">
-              <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-              <input type="password" id="confirmPassword" placeholder="••••••••" required>
-              <button type="button" class="password-toggle" data-for="confirmPassword">
-                <svg class="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg class="eye-off-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-            
-            <div class="terms-container">
-              <input type="checkbox" id="agreeTerms" required>
-              <label for="agreeTerms">
-                I agree to the <a href="#" class="terms-link">Terms of Service</a> and 
-                <a href="#" class="terms-link">Privacy Policy</a>
-              </label>
-            </div>
-            
-            <button type="submit" class="btn-primary" id="registerButton">Create Account</button>
-          </form>
-        </div>
-      </div>
-      
-      <p class="footer-text">© 2025 Natural Remedy Finder. All rights reserved.</p>
     </div>
-  </div>
-</body>
-</html>
+</div>
+{% endblock %}
