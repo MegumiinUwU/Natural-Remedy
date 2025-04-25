@@ -15,8 +15,25 @@
                     <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                 </div>
                 <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                    <p class="text-[#1B5E20]">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-[#1B5E20] mr-3">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                        <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                            <i data-lucide="volume-2" class="h-5 w-5"></i>
+                        </button>
+                    </div>
                     <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
+                    <p class="text-[#1B5E20] mt-4">Would you like to stay as a guest or have a more personalized experience?</p>
+                    <p class="text-[#388E3C] mt-2">Personalized experiences allow us to tailor recommendations specifically for you, based on your preferences and history.</p>
+                    <div class="flex gap-4 mt-4">
+                        <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user" class="h-5 w-5"></i>
+                            <span>Stay as Guest</span>
+                        </button>
+                        <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user-check" class="h-5 w-5"></i>
+                            <span>Personalized</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         {% else %}
@@ -27,12 +44,22 @@
                             <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                         </div>
                         <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                            <p class="text-[#1B5E20]">{{ message.content }}</p>
+                            <div class="flex justify-between items-start">
+                                <p class="text-[#1B5E20] mr-3">{{ message.content }}</p>
+                                <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
+                                </button>
+                            </div>
                             <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
                     {% else %}
                         <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
-                            <p class="text-[#1565C0]">{{ message.content }}</p>
+                            <div class="flex justify-between items-start">
+                                <p class="text-[#1565C0] mr-3">{{ message.content }}</p>
+                                <button class="tts-btn text-[#1565C0] hover:text-[#0D47A1] transition-colors focus:outline-none" title="Listen to this message">
+                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
+                                </button>
+                            </div>
                             <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
                         <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
@@ -119,6 +146,133 @@
         // Scroll to bottom of chat on load
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
+        // Initialize TTS buttons
+        initTtsButtons();
+        
+        // Set up guest and personalized option buttons
+        const guestOption = document.getElementById('guest-option');
+        const personalizedOption = document.getElementById('personalized-option');
+        
+        if (guestOption && personalizedOption) {
+            guestOption.addEventListener('click', function() {
+                addMessage("You chose to stay as a guest. Feel free to ask your questions!", 'bot', new Date().toTimeString().slice(0, 5));
+                scrollToBottom();
+            });
+            
+            personalizedOption.addEventListener('click', function() {
+                addMessage("Great! Let's personalize your experience. I'll ask you a few questions.", 'bot', new Date().toTimeString().slice(0, 5));
+                startPersonalization();
+            });
+        }
+        
+        // TTS Button Functionality
+        function initTtsButtons() {
+            document.querySelectorAll('.tts-btn').forEach(btn => {
+                if (!btn.hasAttribute('data-initialized')) {
+                    btn.setAttribute('data-initialized', 'true');
+                    btn.addEventListener('click', handleTtsClick);
+                }
+            });
+        }
+        
+        function handleTtsClick(e) {
+            const button = e.currentTarget;
+            const messageText = button.closest('div').querySelector('p').textContent;
+            
+            // Visual feedback - change icon to indicate playing
+            const icon = button.querySelector('i');
+            const originalIcon = icon.getAttribute('data-lucide');
+            
+            // Animate button to show it's playing
+            button.classList.add('animate-pulse');
+            icon.setAttribute('data-lucide', 'volume-x');
+            
+            // Update the icon
+            lucide.createIcons({
+                attrs: {
+                    class: ["h-5", "w-5"]
+                },
+                elementQuerySelector: button
+            });
+            
+            // Simulate TTS duration (would be replaced by actual TTS implementation)
+            setTimeout(() => {
+                // Restore original state
+                button.classList.remove('animate-pulse');
+                icon.setAttribute('data-lucide', 'volume-2');
+                
+                // Update the icon back
+                lucide.createIcons({
+                    attrs: {
+                        class: ["h-5", "w-5"]
+                    },
+                    elementQuerySelector: button
+                });
+                
+                console.log("Would play TTS for text:", messageText);
+            }, 2000);
+        }
+        
+        function startPersonalization() {
+            const questions = [
+                { question: "What is your age group?", options: ["Under 18", "18-35", "36-50", "51+"] },
+                { question: "What is your primary wellness goal?", options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief"] },
+                { question: "Do you have any known allergies?", options: ["None", "Pollen", "Nuts", "Other"] }
+            ];
+            
+            let currentQuestionIndex = 0;
+            
+            function askNextQuestion() {
+                if (currentQuestionIndex < questions.length) {
+                    const currentQuestion = questions[currentQuestionIndex];
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'flex items-start space-x-3';
+                    questionDiv.innerHTML = `
+                        <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                            <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                        </div>
+                        <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                            <p class="text-[#1B5E20]">${currentQuestion.question}</p>
+                            <div class="flex flex-wrap gap-4 mt-4">
+                                ${currentQuestion.options.map(option => `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>${option}</button>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(questionDiv);
+                    
+                    // Initialize Lucide icons in the newly added question
+                    lucide.createIcons({
+                        attrs: {
+                            class: ["h-6", "w-6"]
+                        },
+                        elementQuerySelector: questionDiv
+                    });
+                    
+                    const optionButtons = questionDiv.querySelectorAll('.option-btn');
+                    optionButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            addMessage(button.textContent, 'user', new Date().toTimeString().slice(0, 5));
+                            currentQuestionIndex++;
+                            askNextQuestion();
+                        });
+                    });
+                    
+                    scrollToBottom();
+                } else {
+                    addMessage("Thank you for providing your details! Let's get started with personalized recommendations.", 'bot', new Date().toTimeString().slice(0, 5));
+                    
+                    // Clear chat for unregistered users after a delay
+                    if (!conversationId) {
+                        setTimeout(() => {
+                            addMessage("Your data has been saved to provide you with better recommendations in this session.", 'bot', new Date().toTimeString().slice(0, 5));
+                        }, 2000); // Delay to show the thank you message
+                    }
+                }
+            }
+            
+            askNextQuestion();
+        }
+        
         chatForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -193,14 +347,24 @@
                         <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                     </div>
                     <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                        <p class="text-[#1B5E20]">${text}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="text-[#1B5E20] mr-3">${text}</p>
+                            <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                                <i data-lucide="volume-2" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                         <span class="text-xs text-gray-500 mt-1 block">${time}</span>
                     </div>
                 `;
             } else {
                 messageDiv.innerHTML = `
                     <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
-                        <p class="text-[#1565C0]">${text}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="text-[#1565C0] mr-3">${text}</p>
+                            <button class="tts-btn text-[#1565C0] hover:text-[#0D47A1] transition-colors focus:outline-none" title="Listen to this message">
+                                <i data-lucide="volume-2" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                         <span class="text-xs text-gray-500 mt-1 block">${time}</span>
                     </div>
                     <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
@@ -218,6 +382,9 @@
                 },
                 elementQuerySelector: messageDiv
             });
+            
+            // Initialize TTS buttons for the new message
+            initTtsButtons();
         }
         
         function addSystemMessage(text) {

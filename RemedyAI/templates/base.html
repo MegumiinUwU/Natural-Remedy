@@ -153,7 +153,6 @@
     <script src="{% static 'js/main.js' %}"></script>
     
     <script>
-        // Fix for dropdown closing too quickly
         document.addEventListener('DOMContentLoaded', function() {
             const dropdownToggle = document.querySelector('.dropdown-toggle');
             const dropdownMenu = document.querySelector('.dropdown-menu');
@@ -165,8 +164,15 @@
                 let isHoveringDropdown = false;
                 let isHoveringMenu = false;
                 
+                // Add a longer timeout for the menu to close
+                let closeTimeout;
+                
                 dropdownToggle.addEventListener('mouseenter', function() {
                     isHoveringDropdown = true;
+                    // Clear any existing timeout when re-entering
+                    if (closeTimeout) {
+                        clearTimeout(closeTimeout);
+                    }
                     setTimeout(function() {
                         if (isHoveringDropdown || isHoveringMenu) {
                             const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
@@ -178,28 +184,53 @@
                 
                 dropdownToggle.addEventListener('mouseleave', function() {
                     isHoveringDropdown = false;
-                    setTimeout(function() {
+                    // Use a much longer timeout to give user time to move to the menu
+                    closeTimeout = setTimeout(function() {
                         if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
                             const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
                             bsDropdown.hide();
                             isDropdownOpen = false;
                         }
-                    }, 200);
+                    }, 1000); // Increased from 500ms to 1000ms
                 });
                 
                 dropdownMenu.addEventListener('mouseenter', function() {
                     isHoveringMenu = true;
+                    // Clear any pending close when entering the menu
+                    if (closeTimeout) {
+                        clearTimeout(closeTimeout);
+                    }
                 });
                 
                 dropdownMenu.addEventListener('mouseleave', function() {
                     isHoveringMenu = false;
-                    setTimeout(function() {
+                    closeTimeout = setTimeout(function() {
                         if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
                             const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
                             bsDropdown.hide();
                             isDropdownOpen = false;
                         }
-                    }, 200);
+                    }, 1000); // Increased from 500ms to 1000ms
+                });
+                
+                // Add click handler for mobile devices
+                dropdownToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (isDropdownOpen) {
+                        const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
+                        bsDropdown.hide();
+                        isDropdownOpen = false;
+                    } else {
+                        const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
+                        bsDropdown.show();
+                        isDropdownOpen = true;
+                    }
+                });
+                
+                // Prevent automatic closing when clicking inside the dropdown menu
+                dropdownMenu.addEventListener('click', function(e) {
+                    e.stopPropagation();
                 });
             }
         });
