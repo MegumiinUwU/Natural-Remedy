@@ -1,0 +1,58 @@
+{% extends 'base_tailwind.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<section class="pt-32 pb-20 bg-[#FFFBF2]">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-16 fade-in">
+            <h1 class="text-3xl md:text-5xl font-display font-bold text-[#1B5E20] mb-4">
+                Our Services
+            </h1>
+            <div class="w-24 h-1 bg-[#4CAF50] mx-auto mb-6"></div>
+            <p class="max-w-3xl mx-auto text-lg text-[#2E7D32]">
+                Discover how Natural Remedy Finder can support your wellness journey.
+            </p>
+        </div>
+
+        <!-- Services content -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden fade-in">
+                <div class="p-8">
+                    <div class="bg-[#E8F5E9] p-4 rounded-full inline-flex mb-6">
+                        <i data-lucide="message-circle" class="h-8 w-8 text-[#43A047]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-[#1B5E20] mb-4">AI Health Assistant</h3>
+                    <p class="text-[#388E3C]">
+                        Our intuitive chatbot helps you find natural remedies for your specific concerns. Simply describe your symptoms or ask health questions, and receive personalized suggestions.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden fade-in" style="animation-delay: 0.2s;">
+                <div class="p-8">
+                    <div class="bg-[#E8F5E9] p-4 rounded-full inline-flex mb-6">
+                        <i data-lucide="book-open" class="h-8 w-8 text-[#43A047]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-[#1B5E20] mb-4">Herb Encyclopedia</h3>
+                    <p class="text-[#388E3C]">
+                        Browse our comprehensive database of herbs, natural remedies, and wellness practices. Each entry includes benefits, traditional uses, precautions, and scientific research.
+                    </p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden fade-in" style="animation-delay: 0.4s;">
+                <div class="p-8">
+                    <div class="bg-[#E8F5E9] p-4 rounded-full inline-flex mb-6">
+                        <i data-lucide="file-text" class="h-8 w-8 text-[#43A047]"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-[#1B5E20] mb-4">Wellness Resources</h3>
+                    <p class="text-[#388E3C]">
+                        Access a growing collection of articles, guides, and resources about holistic health practices, from cold therapy and mindfulness to herbal preparations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

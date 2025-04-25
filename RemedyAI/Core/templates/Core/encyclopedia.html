@@ -1,0 +1,56 @@
+{% extends 'Core/base_core.html' %}
+{% load static %}
+
+{% block core_content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">Herb Encyclopedia</h1>
+        
+        <div class="mb-4">
+            <form class="d-flex" method="get" action="{% url 'Core:encyclopedia' %}">
+                <input type="search" name="q" class="form-control me-2" placeholder="Search herbs..." value="{{ query }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+        
+        <div class="row g-4">
+            {% for herb in herbs %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        {% if herb.image %}
+                            <img src="{{ herb.image.url }}" class="card-img-top herb-image" alt="{{ herb.name }}">
+                        {% else %}
+                            <img src="{% static 'images/herb-placeholder.jpg' %}" class="card-img-top herb-image" alt="{{ herb.name }}">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ herb.name }}</h5>
+                            <p class="card-text"><strong>Benefits:</strong> {{ herb.benefits|truncatechars:80 }}</p>
+                            <a href="{% url 'Core:herb_detail' herb.id %}" class="btn btn-sm btn-outline-primary">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        {% if query %}
+                            No herbs found matching "{{ query }}". Try a different search term.
+                        {% else %}
+                            No herbs found in the database. Add some herbs to get started.
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+    .herb-image {
+        height: 200px;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}

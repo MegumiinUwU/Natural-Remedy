@@ -1,0 +1,78 @@
+/* Custom styles for Natural Remedy Finder */
+
+/* Global styles */
+:root {
+  --primary: #2e7d32;  /* Green primary color for natural/herbal theme */
+  --primary-dark: #1b5e20;
+  --primary-light: #81c784;
+  --secondary: #ff8f00;  /* Amber/gold for accent */
+  --light: #f8f9fa;
+  --dark: #212529;
+}
+
+body {
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+  color: var(--dark);
+}
+
+/* Background gradients */
+.bg-gradient-primary {
+  background: linear-gradient(120deg, var(--primary), var(--primary-dark));
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Feature icon styles */
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  font-size: 1.5rem;
+}
+
+/* Step number styles */
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Hero section */
+.hero {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+/* Add responsive adjustments */
+@media (max-width: 767.98px) {
+  .hero {
+    text-align: center;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+}

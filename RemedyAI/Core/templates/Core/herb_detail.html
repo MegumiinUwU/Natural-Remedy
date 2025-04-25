@@ -1,0 +1,70 @@
+{% extends 'Core/base_core.html' %}
+{% load static %}
+
+{% block core_content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'Core:encyclopedia' %}">Encyclopedia</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ herb.name }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            {% if herb.image %}
+                <img src="{{ herb.image.url }}" class="img-fluid rounded" alt="{{ herb.name }}">
+            {% else %}
+                <img src="{% static 'images/herb-placeholder.jpg' %}" class="img-fluid rounded" alt="{{ herb.name }}">
+            {% endif %}
+        </div>
+        <div class="col-md-8">
+            <h1 class="mb-2">{{ herb.name }}</h1>
+            {% if herb.scientific_name %}
+                <p class="text-muted font-italic mb-3">{{ herb.scientific_name }}</p>
+            {% endif %}
+            
+            <div class="d-flex flex-wrap mb-3">
+                {% for category in herb.categories.all %}
+                    <span class="badge bg-success me-2 mb-2">{{ category.name }}</span>
+                {% endfor %}
+            </div>
+            
+            <div class="herb-description mb-4">
+                <h5>Description</h5>
+                <p>{{ herb.description|linebreaks }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Benefits</h5>
+                </div>
+                <div class="card-body">
+                    {{ herb.benefits|linebreaks }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Usage</h5>
+                </div>
+                <div class="card-body">
+                    {{ herb.usage|linebreaks }}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if herb.precautions %}
+    <div class="alert alert-warning mt-3">
+        <h5>Precautions</h5>
+        {{ herb.precautions|linebreaks }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends 'Core/base_core.html' %}
+{% load static %}
+
+{% block core_content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                {% if user_profile.profile_image %}
+                    <img src="{{ user_profile.profile_image.url }}" alt="{{ user.username }}" class="rounded-circle mb-3" width="120" height="120">
+                {% else %}
+                    <img src="{% static 'images/user-avatar.png' %}" alt="{{ user.username }}" class="rounded-circle mb-3" width="120" height="120">
+                {% endif %}
+                <h5 class="card-title">{{ user.get_full_name|default:user.username }}</h5>
+                <p class="text-muted">Member since {{ user.date_joined|date:"F j, Y" }}</p>
+                
+                <!-- Image upload button that opens file select dialog -->
+                <form id="profile-image-form" enctype="multipart/form-data" method="post" action="{% url 'Core:profile' %}">
+                    {% csrf_token %}
+                    <input type="file" name="profile_image" id="profile-image-input" class="d-none" accept="image/*">
+                    <button type="button" id="change-photo-btn" class="btn btn-outline-primary">Change Photo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Profile Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'Core:profile' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3">{{ user_profile.bio }}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Change Password</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'password_change' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="old_password" class="form-label">Current Password</label>
+                        <input type="password" class="form-control" id="old_password" name="old_password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password1" class="form-label">New Password</label>
+                        <input type="password" class="form-control" id="new_password1" name="new_password1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password2" class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" id="new_password2" name="new_password2">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle profile image upload
+    const profileImageInput = document.getElementById('profile-image-input');
+    const changePhotoBtn = document.getElementById('change-photo-btn');
+    const profileImageForm = document.getElementById('profile-image-form');
+    
+    changePhotoBtn.addEventListener('click', function() {
+        profileImageInput.click();
+    });
+    
+    profileImageInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            profileImageForm.submit();
+        }
+    });
+});
+</script>
+{% endblock %}

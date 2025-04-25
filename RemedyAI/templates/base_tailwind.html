@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Natural Remedy - AI-powered natural health solutions">
+    
+    <title>{% block title %}Natural Remedy{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    {% load static %}
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFBF2;
+            color: #333;
+        }
+
+        .font-display {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .bg-light-cream {
+            background-color: #FFFBF2;
+        }
+
+        .leaf-float {
+            animation: leaf-float 15s ease-in-out infinite;
+            transform-origin: center;
+        }
+          
+        .leaf-float:nth-child(2n) {
+            animation-duration: 18s;
+            animation-delay: 2s;
+        }
+          
+        .leaf-float:nth-child(3n) {
+            animation-duration: 20s;
+            animation-delay: 1s;
+        }
+          
+        .leaf-float:nth-child(4n) {
+            animation-duration: 22s;
+            animation-delay: 3s;
+        }
+          
+        @keyframes leaf-float {
+            0%, 100% {
+                transform: translateY(0) rotate(0);
+            }
+            25% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+            50% {
+                transform: translateY(5px) rotate(-3deg);
+            }
+            75% {
+                transform: translateY(-10px) rotate(2deg);
+            }
+        }
+        
+        /* Animation classes */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.8s forwards;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stagger-fade-in > * {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .stagger-fade-in > *:nth-child(1) {
+            animation: fadeIn 0.8s forwards 0.1s;
+        }
+        
+        .stagger-fade-in > *:nth-child(2) {
+            animation: fadeIn 0.8s forwards 0.3s;
+        }
+        
+        .stagger-fade-in > *:nth-child(3) {
+            animation: fadeIn 0.8s forwards 0.5s;
+        }
+        
+        .stagger-fade-in > *:nth-child(4) {
+            animation: fadeIn 0.8s forwards 0.7s;
+        }
+        
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-50px);
+            animation: slideInLeft 0.8s forwards;
+        }
+        
+        @keyframes slideInLeft {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="fixed w-full z-50 transition-all duration-300 py-5 bg-transparent" id="header">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{% url 'Landing:home' %}" class="flex items-center">
+                    <i data-lucide="leaf" class="h-8 w-8 text-[#43A047] mr-2"></i>
+                    <span class="font-display text-2xl font-bold text-[#43A047]">
+                        Natural Remedy
+                    </span>
+                </a>
+            </div>
+
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="{% url 'Landing:home' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors">Home</a>
+                <a href="{% url 'Landing:about' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors">About</a>
+                <a href="{% url 'Landing:services' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors">Services</a>
+                <a href="{% url 'Landing:contact' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors">Contact</a>
+                
+                {% if user.is_authenticated %}
+                <div class="relative group">
+                    <button class="flex items-center text-[#2E7D32] hover:text-[#43A047] transition-colors">
+                        <span class="mr-1">{{ user.username }}</span>
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+                        <a href="{% url 'Core:dashboard' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Dashboard</a>
+                        <a href="{% url 'Core:profile' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Profile</a>
+                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Logout</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'login' %}" class="px-4 py-2 rounded-md transition-colors text-[#43A047] hover:bg-white/20">
+                    Login
+                </a>
+                <a href="{% url 'register' %}" class="px-6 py-2 bg-[#43A047] text-white rounded-md shadow-sm hover:bg-[#388E3C] transition-colors">
+                    Get Started
+                </a>
+                {% endif %}
+            </nav>
+            
+            <!-- Mobile menu button -->
+            <button class="md:hidden text-[#43A047]" id="mobile-menu-button">
+                <i data-lucide="menu" class="h-6 w-6"></i>
+            </button>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div class="md:hidden hidden bg-white w-full absolute left-0 top-full shadow-md" id="mobile-menu">
+            <div class="container mx-auto px-4 py-4 flex flex-col space-y-4">
+                <a href="{% url 'Landing:home' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Home</a>
+                <a href="{% url 'Landing:about' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">About</a>
+                <a href="{% url 'Landing:services' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Services</a>
+                <a href="{% url 'Landing:contact' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Contact</a>
+                
+                {% if user.is_authenticated %}
+                <a href="{% url 'Core:dashboard' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Dashboard</a>
+                <a href="{% url 'Core:profile' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Profile</a>
+                <a href="{% url 'logout' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Logout</a>
+                {% else %}
+                <div class="flex flex-col sm:flex-row gap-2 py-2">
+                    <a href="{% url 'login' %}" class="px-4 py-2 rounded-md text-[#43A047] border border-[#43A047] text-center">
+                        Login
+                    </a>
+                    <a href="{% url 'register' %}" class="px-6 py-2 bg-[#43A047] text-white rounded-md shadow-sm hover:bg-[#388E3C] transition-colors text-center">
+                        Get Started
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mx-auto px-4 pt-32">
+        {% for message in messages %}
+        <div class="flex items-center p-4 mb-4 text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %} rounded-lg" role="alert">
+            <div>{{ message }}</div>
+            <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 hover:bg-opacity-30 inline-flex items-center justify-center h-8 w-8" data-dismiss-target="#alert-1" aria-label="Close">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#1B5E20] text-white pt-16 pb-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="md:col-span-1">
+                    <div class="flex items-center mb-4">
+                        <i data-lucide="leaf" class="h-8 w-8 text-[#81C784] mr-2"></i>
+                        <span class="font-display text-2xl font-bold text-white">
+                            Natural Remedy
+                        </span>
+                    </div>
+                    
+                    <p class="text-[#C8E6C9] mb-6">
+                        Connecting you with nature's healing power through personalized recommendations and traditional wisdom.
+                    </p>
+                    
+                    <div class="flex space-x-4">
+                        <a href="#" class="bg-[#2E7D32] p-2 rounded-full text-[#A5D6A7] hover:text-white hover:bg-[#388E3C] transition-colors">
+                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                        </a>
+                        
+                        <a href="#" class="bg-[#2E7D32] p-2 rounded-full text-[#A5D6A7] hover:text-white hover:bg-[#388E3C] transition-colors">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                        
+                        <a href="#" class="bg-[#2E7D32] p-2 rounded-full text-[#A5D6A7] hover:text-white hover:bg-[#388E3C] transition-colors">
+                            <i data-lucide="facebook" class="w-5 h-5"></i>
+                        </a>
+                        
+                        <a href="#" class="bg-[#2E7D32] p-2 rounded-full text-[#A5D6A7] hover:text-white hover:bg-[#388E3C] transition-colors">
+                            <i data-lucide="mail" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-1">
+                    <h3 class="text-xl font-display font-bold mb-6 text-[#A5D6A7]">
+                        Links
+                    </h3>
+                    <ul class="space-y-3">
+                        <li><a href="{% url 'Landing:home' %}" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">Home</a></li>
+                        <li><a href="{% url 'Landing:about' %}" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">About</a></li>
+                        <li><a href="{% url 'Landing:services' %}" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">Services</a></li>
+                        <li><a href="{% url 'Landing:contact' %}" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="md:col-span-1">
+                    <h3 class="text-xl font-display font-bold mb-6 text-[#A5D6A7]">
+                        Connect
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="#" class="text-[#C8E6C9] hover:text-white transition-colors flex items-center">
+                            <i data-lucide="facebook" class="w-5 h-5 mr-2"></i>
+                            Facebook
+                        </a>
+                        <a href="#" class="text-[#C8E6C9] hover:text-white transition-colors flex items-center">
+                            <i data-lucide="twitter" class="w-5 h-5 mr-2"></i>
+                            Twitter
+                        </a>
+                        <a href="#" class="text-[#C8E6C9] hover:text-white transition-colors flex items-center">
+                            <i data-lucide="instagram" class="w-5 h-5 mr-2"></i>
+                            Instagram
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-1">
+                    <h3 class="text-xl font-display font-bold mb-6 text-[#A5D6A7]">
+                        Legal
+                    </h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">Privacy Policy</a></li>
+                        <li><a href="#" class="text-[#C8E6C9] hover:text-white transition-colors inline-block">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-[#2E7D32] pt-8 text-center">
+                <p class="text-[#81C784] text-sm flex items-center justify-center">
+                    Made with <i data-lucide="heart" class="h-4 w-4 text-[#E57373] mx-1" fill="currentColor"></i> by Natural Remedy © {% now "Y" %}
+                </p>
+                <p class="text-[#66BB6A] text-xs mt-2">
+                    The information provided is for educational purposes only and is not a substitute for professional medical advice.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Handle header background change on scroll
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('header');
+            if (window.scrollY > 20) {
+                header.classList.remove('bg-transparent');
+                header.classList.add('bg-white', 'shadow-md', 'py-3');
+            } else {
+                header.classList.remove('bg-white', 'shadow-md', 'py-3');
+                header.classList.add('bg-transparent', 'py-5');
+            }
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Animation on scroll
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
+            });
+            
+            // Alert dismissal
+            document.querySelectorAll('[data-dismiss-target]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const target = this.closest('.flex');
+                    target.remove();
+                });
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

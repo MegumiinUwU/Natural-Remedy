@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="offcanvas-lg offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
+        <div class="offcanvas-header bg-primary text-white">
+            <h5 class="offcanvas-title" id="sidebarMenuLabel">Natural Remedy Finder</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" data-bs-target="#sidebarMenu" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="d-flex flex-column flex-shrink-0 p-3 bg-light h-100">
+                <div class="text-center mb-3">
+                    {% if user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" alt="{{ user.username }}" class="rounded-circle mb-2" width="80" height="80">
+                    {% else %}
+                        <img src="{% static 'images/user-avatar.png' %}" alt="{{ user.username }}" class="rounded-circle mb-2" width="80" height="80">
+                    {% endif %}
+                    <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                </div>
+                <hr>
+                <ul class="nav nav-pills flex-column mb-auto">
+                    <li class="nav-item">
+                        <a href="{% url 'Core:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% else %}text-dark{% endif %}">
+                            <i class="bi bi-house-door me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'Core:new_chat' %}" class="nav-link {% if request.resolver_match.url_name == 'new_chat' or request.resolver_match.url_name == 'chat' %}active{% else %}text-dark{% endif %}">
+                            <i class="bi bi-chat-text me-2"></i>New Chat
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'Core:encyclopedia' %}" class="nav-link {% if request.resolver_match.url_name == 'encyclopedia' or request.resolver_match.url_name == 'herb_detail' %}active{% else %}text-dark{% endif %}">
+                            <i class="bi bi-book me-2"></i>Herb Encyclopedia
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'Core:profile' %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% else %}text-dark{% endif %}">
+                            <i class="bi bi-person me-2"></i>My Profile
+                        </a>
+                    </li>
+                </ul>
+                <hr>
+                <div>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="flex-grow-1 main-content">
+        <!-- Top navbar for mobile -->
+        <nav class="navbar navbar-expand-lg d-lg-none bg-light">
+            <div class="container-fluid">
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                    <i class="bi bi-list fs-4"></i>
+                </button>
+                <span class="navbar-brand">Natural Remedy Finder</span>
+            </div>
+        </nav>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div class="container mt-3">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Page content -->
+        <div class="container-fluid py-4">
+            {% block core_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media (min-width: 992px) {
+        .offcanvas-lg {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            width: 280px;
+            transition: none;
+            transform: none;
+            visibility: visible !important;
+        }
+        .main-content {
+            width: calc(100% - 280px);
+        }
+    }
+    .nav-link.active {
+        background-color: var(--primary) !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}
