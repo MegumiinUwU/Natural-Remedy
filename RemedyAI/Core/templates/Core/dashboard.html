@@ -2,53 +2,122 @@
 {% load static %}
 
 {% block core_content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="h3 mb-4">Welcome back, {{ user.first_name|default:user.username }}</h1>
-        
-        <div class="row mb-4">
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <h5>Start a New Conversation</h5>
-                        <p class="text-muted">Describe your symptoms or ask health questions</p>
-                        <a href="{% url 'Core:new_chat' %}" class="btn btn-primary">
-                            <i class="bi bi-chat-dots me-2"></i>New Chat
-                        </a>
-                    </div>
-                </div>
+<div>
+    <!-- Welcome Section -->
+    <div class="bg-gradient-to-r from-[#E8F5E9] to-[#C8E6C9] rounded-xl p-6 mb-6 shadow-sm">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-[#1B5E20] mb-2">Welcome back, {{ user.first_name|default:user.username }}</h1>
+                <p class="text-[#388E3C]">What natural remedy are you looking for today?</p>
             </div>
-            <div class="col-md-6">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center p-4">
-                        <h5>Browse Herb Encyclopedia</h5>
-                        <p class="text-muted">Explore our database of natural remedies</p>
-                        <a href="{% url 'Core:encyclopedia' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-book me-2"></i>Encyclopedia
-                        </a>
-                    </div>
-                </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'Core:new_chat' %}" class="inline-flex items-center px-5 py-3 bg-[#43A047] text-white rounded-lg hover:bg-[#2E7D32] transition-colors shadow-sm">
+                    <i data-lucide="message-circle" class="h-5 w-5 mr-2"></i>
+                    Start New Consultation
+                </a>
             </div>
         </div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-[#43A047] hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="bg-[#E8F5E9] p-3 rounded-lg">
+                    <i data-lucide="message-circle" class="h-6 w-6 text-[#43A047]"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-semibold text-[#1B5E20]">New Chat</h3>
+            </div>
+            <p class="text-[#2E7D32] mb-4 text-sm">Describe your symptoms or ask health questions to get personalized natural remedy suggestions.</p>
+            <a href="{% url 'Core:new_chat' %}" class="text-[#43A047] hover:text-[#2E7D32] font-medium inline-flex items-center">
+                Start conversation
+                <i data-lucide="arrow-right" class="h-4 w-4 ml-1"></i>
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-[#66BB6A] hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="bg-[#E8F5E9] p-3 rounded-lg">
+                    <i data-lucide="book-open" class="h-6 w-6 text-[#66BB6A]"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-semibold text-[#1B5E20]">Encyclopedia</h3>
+            </div>
+            <p class="text-[#2E7D32] mb-4 text-sm">Browse our comprehensive database of herbs, natural remedies, and wellness practices.</p>
+            <a href="{% url 'Core:encyclopedia' %}" class="text-[#66BB6A] hover:text-[#2E7D32] font-medium inline-flex items-center">
+                Explore herbs
+                <i data-lucide="arrow-right" class="h-4 w-4 ml-1"></i>
+            </a>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-[#81C784] hover:shadow-md transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="bg-[#E8F5E9] p-3 rounded-lg">
+                    <i data-lucide="user" class="h-6 w-6 text-[#81C784]"></i>
+                </div>
+                <h3 class="ml-3 text-lg font-semibold text-[#1B5E20]">My Profile</h3>
+            </div>
+            <p class="text-[#2E7D32] mb-4 text-sm">Update your personal information and preferences for more personalized recommendations.</p>
+            <a href="{% url 'Core:profile' %}" class="text-[#81C784] hover:text-[#2E7D32] font-medium inline-flex items-center">
+                View profile
+                <i data-lucide="arrow-right" class="h-4 w-4 ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Conversations Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-[#1B5E20]">Recent Conversations</h2>
+            <a href="{% url 'Core:new_chat' %}" class="text-[#43A047] hover:text-[#2E7D32] font-medium inline-flex items-center text-sm">
+                View all
+                <i data-lucide="chevron-right" class="h-4 w-4 ml-1"></i>
+            </a>
+        </div>
         
-        <h2 class="h4 mb-3">Recent Conversations</h2>
         {% if chat_history %}
-            <div class="list-group">
+            <div class="space-y-4">
                 {% for chat in chat_history %}
-                    <a href="{% url 'Core:chat' chat.id %}" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">{{ chat.title }}</h5>
-                            <small>{{ chat.date }}</small>
+                    <a href="{% url 'Core:chat' chat.id %}" class="block bg-[#F9FDF9] hover:bg-[#F1F8F1] p-4 rounded-lg transition-colors">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center">
+                                <div class="bg-[#E8F5E9] p-2 rounded-full">
+                                    <i data-lucide="message-square" class="h-5 w-5 text-[#43A047]"></i>
+                                </div>
+                                <h3 class="ml-3 font-medium text-[#1B5E20]">{{ chat.title }}</h3>
+                            </div>
+                            <span class="text-xs text-[#388E3C] bg-[#E8F5E9] px-2 py-1 rounded-full">{{ chat.date }}</span>
                         </div>
-                        <p class="mb-1 text-truncate">{{ chat.preview }}</p>
+                        <p class="mt-2 text-[#388E3C] text-sm pl-10">{{ chat.preview }}</p>
                     </a>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="alert alert-info">
-                You don't have any conversations yet. Start a <a href="{% url 'Core:new_chat' %}">new chat</a> to get personalized remedy suggestions.
+            <div class="bg-[#E8F5E9] rounded-lg p-6 text-center">
+                <div class="inline-flex items-center justify-center bg-white p-3 rounded-full mb-3">
+                    <i data-lucide="message-square" class="h-6 w-6 text-[#43A047]"></i>
+                </div>
+                <h3 class="text-lg font-medium text-[#1B5E20] mb-2">No conversations yet</h3>
+                <p class="text-[#388E3C] mb-4">Start your first chat to get personalized remedy suggestions for your wellness journey.</p>
+                <a href="{% url 'Core:new_chat' %}" class="inline-flex items-center px-4 py-2 bg-[#43A047] text-white rounded-lg hover:bg-[#2E7D32] transition-colors">
+                    <i data-lucide="plus" class="h-4 w-4 mr-1"></i> 
+                    New Chat
+                </a>
             </div>
         {% endif %}
+    </div>
+
+    <!-- Health Tips Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-xl font-bold text-[#1B5E20] mb-4">Daily Wellness Tip</h2>
+        <div class="flex items-start bg-[#F9FDF9] p-4 rounded-lg">
+            <div class="bg-[#E8F5E9] p-3 rounded-full flex-shrink-0">
+                <i data-lucide="lightbulb" class="h-6 w-6 text-[#43A047]"></i>
+            </div>
+            <div class="ml-4">
+                <h4 class="font-medium text-[#1B5E20]">Stay Hydrated</h4>
+                <p class="text-[#388E3C] text-sm mt-1">Drinking adequate water helps maintain the balance of body fluids, which aids in digestion, circulation, and temperature regulation. Try adding herbs like mint or cucumber for added benefits.</p>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

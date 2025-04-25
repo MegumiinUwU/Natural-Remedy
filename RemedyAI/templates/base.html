@@ -94,7 +94,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-white py-5 mt-5">
+    <footer class="bg-[#1B5E20] text-white py-5 mt-5">
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-4">
@@ -151,6 +151,59 @@
     
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
+    
+    <script>
+        // Fix for dropdown closing too quickly
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownToggle = document.querySelector('.dropdown-toggle');
+            const dropdownMenu = document.querySelector('.dropdown-menu');
+            
+            if (dropdownToggle && dropdownMenu) {
+                let isDropdownOpen = false;
+                
+                // Keep track of whether we're hovering over the dropdown or its menu
+                let isHoveringDropdown = false;
+                let isHoveringMenu = false;
+                
+                dropdownToggle.addEventListener('mouseenter', function() {
+                    isHoveringDropdown = true;
+                    setTimeout(function() {
+                        if (isHoveringDropdown || isHoveringMenu) {
+                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
+                            bsDropdown.show();
+                            isDropdownOpen = true;
+                        }
+                    }, 100);
+                });
+                
+                dropdownToggle.addEventListener('mouseleave', function() {
+                    isHoveringDropdown = false;
+                    setTimeout(function() {
+                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
+                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
+                            bsDropdown.hide();
+                            isDropdownOpen = false;
+                        }
+                    }, 200);
+                });
+                
+                dropdownMenu.addEventListener('mouseenter', function() {
+                    isHoveringMenu = true;
+                });
+                
+                dropdownMenu.addEventListener('mouseleave', function() {
+                    isHoveringMenu = false;
+                    setTimeout(function() {
+                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
+                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
+                            bsDropdown.hide();
+                            isDropdownOpen = false;
+                        }
+                    }, 200);
+                });
+            }
+        });
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>
