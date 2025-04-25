@@ -17,6 +17,18 @@
                 <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
                     <p class="text-[#1B5E20]">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
                     <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
+                    <p class="text-[#1B5E20] mt-4">Would you like to stay as a guest or have a more personalized experience?</p>
+                    <p class="text-[#388E3C] mt-2">Personalized experiences allow us to tailor recommendations specifically for you, based on your preferences and history.</p>
+                    <div class="flex gap-4 mt-4">
+                        <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user" class="h-5 w-5"></i>
+                            <span>Stay as Guest</span>
+                        </button>
+                        <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user-check" class="h-5 w-5"></i>
+                            <span>Personalized</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         {% else %}
@@ -111,6 +123,71 @@
         const chatMessages = document.getElementById('chat-messages');
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
+        const guestOption = document.getElementById('guest-option');
+        const personalizedOption = document.getElementById('personalized-option');
+
+        guestOption.addEventListener('click', function() {
+            addMessage("You chose to stay as a guest. Feel free to ask your questions!", 'bot', new Date().toTimeString().slice(0, 5));
+        });
+
+        personalizedOption.addEventListener('click', function() {
+            addMessage("Great! Let's personalize your experience. I'll ask you a few questions.", 'bot', new Date().toTimeString().slice(0, 5));
+            startPersonalization();
+        });
+
+        function startPersonalization() {
+            const questions = [
+                { question: "What is your age group?", options: ["Under 18", "18-35", "36-50", "51+"] },
+                { question: "What is your primary wellness goal?", options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief"] },
+                { question: "Do you have any known allergies?", options: ["None", "Pollen", "Nuts", "Other"] }
+            ];
+
+            let currentQuestionIndex = 0;
+
+            function askNextQuestion() {
+                if (currentQuestionIndex < questions.length) {
+                    const currentQuestion = questions[currentQuestionIndex];
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'flex items-start space-x-3';
+                    questionDiv.innerHTML = `
+                        <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                            <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                        </div>
+                        <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                            <p class="text-[#1B5E20]">${currentQuestion.question}</p>
+                            <div class="flex gap-4 mt-4">
+                                ${currentQuestion.options.map(option => `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>${option}</button>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                    chatMessages.appendChild(questionDiv);
+
+                    const optionButtons = questionDiv.querySelectorAll('.option-btn');
+                    optionButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            addMessage(button.textContent, 'user', new Date().toTimeString().slice(0, 5));
+                            currentQuestionIndex++;
+                            askNextQuestion();
+                        });
+                    });
+
+                    scrollToBottom();
+                } else {
+                    addMessage("Thank you for providing your details! Let's get started with personalized recommendations.", 'bot', new Date().toTimeString().slice(0, 5));
+
+                    // Clear chat for unregistered users
+                    if (!conversationId) {
+                        setTimeout(() => {
+                            chatMessages.innerHTML = '';
+                            addMessage("Your data has been cleared. Feel free to ask any questions or explore remedies!", 'bot', new Date().toTimeString().slice(0, 5));
+                        }, 2000); // Delay to show the thank you message
+                    }
+                }
+            }
+
+            askNextQuestion();
+        }
+
         // {% if conversation %}
         let conversationId = "{{ conversation.id|default:'' }}";
         conversationId = conversationId === "" ? null : conversationId;
