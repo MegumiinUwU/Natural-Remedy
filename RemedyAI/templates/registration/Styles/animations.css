@@ -1,0 +1,101 @@
+@keyframes slide-in-bottom {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes leaf-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0);
+  }
+  25% {
+    transform: translateY(-15px) rotate(5deg);
+  }
+  50% {
+    transform: translateY(5px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(2deg);
+  }
+}
+
+.leaf-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.leaf-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(var(--green-100) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+.leaf {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2222c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.2;
+  animation: leaf-float 15s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.leaf:nth-child(1) {
+  top: 10%;
+  left: 10%;
+  animation-duration: 18s;
+}
+
+.leaf:nth-child(2) {
+  top: 20%;
+  right: 15%;
+  animation-duration: 20s;
+  animation-delay: 2s;
+}
+
+.leaf:nth-child(3) {
+  bottom: 15%;
+  left: 20%;
+  animation-duration: 22s;
+  animation-delay: 1s;
+}
+
+.leaf:nth-child(4) {
+  bottom: 25%;
+  right: 10%;
+  animation-duration: 19s;
+  animation-delay: 3s;
+}
+
+.leaf:nth-child(5) {
+  top: 50%;
+  left: 5%;
+  animation-duration: 21s;
+  animation-delay: 2s;
+}
+
+.leaf:nth-child(6) {
+  top: 40%;
+  right: 5%;
+  animation-duration: 17s;
+  animation-delay: 1s;
+}
