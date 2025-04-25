@@ -1,0 +1,202 @@
+{% extends 'base_tailwind.html' %}
+{% load static %}
+
+{% block content %}
+<div class="bg-[#FFFBF2] min-h-screen pt-32">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row gap-6">
+            <!-- Sidebar -->
+            <div class="w-full md:w-72 bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-6 bg-[#E8F5E9] text-center">
+                    {% if user.profile.profile_image %}
+                        <img src="{{ user.profile.profile_image.url }}" alt="{{ user.username }}" class="rounded-full mx-auto mb-3 w-20 h-20 object-cover border-4 border-white">
+                    {% else %}
+                        <div class="rounded-full mx-auto mb-3 w-20 h-20 bg-[#81C784] flex items-center justify-center text-white text-2xl font-bold">
+                            {{ user.username|make_list|first|upper }}
+                        </div>
+                    {% endif %}
+                    <h5 class="font-display font-bold text-[#1B5E20]">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-sm text-[#388E3C]">Member since {{ user.date_joined|date:"F j, Y" }}</p>
+                </div>
+                
+                <div class="p-4">
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="{% url 'Core:dashboard' %}" 
+                               class="flex items-center p-3 rounded-md {% if request.resolver_match.url_name == 'dashboard' %}bg-[#E8F5E9] text-[#1B5E20] font-medium{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %} transition-colors">
+                                <i data-lucide="layout-dashboard" class="h-5 w-5 mr-3"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'Core:new_chat' %}" 
+                               class="flex items-center p-3 rounded-md {% if request.resolver_match.url_name == 'new_chat' or request.resolver_match.url_name == 'chat' %}bg-[#E8F5E9] text-[#1B5E20] font-medium{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %} transition-colors">
+                                <i data-lucide="message-circle" class="h-5 w-5 mr-3"></i>
+                                <span>New Chat</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'Core:encyclopedia' %}" 
+                               class="flex items-center p-3 rounded-md {% if request.resolver_match.url_name == 'encyclopedia' or request.resolver_match.url_name == 'herb_detail' %}bg-[#E8F5E9] text-[#1B5E20] font-medium{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %} transition-colors">
+                                <i data-lucide="book-open" class="h-5 w-5 mr-3"></i>
+                                <span>Herb Encyclopedia</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'Core:profile' %}" 
+                               class="flex items-center p-3 rounded-md {% if request.resolver_match.url_name == 'profile' %}bg-[#E8F5E9] text-[#1B5E20] font-medium{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %} transition-colors">
+                                <i data-lucide="user" class="h-5 w-5 mr-3"></i>
+                                <span>My Profile</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="p-4 border-t border-gray-100">
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center p-3 rounded-md text-red-500 hover:bg-red-50 transition-colors w-full text-left">
+                            <i data-lucide="log-out" class="h-5 w-5 mr-3"></i>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="flex-1">
+                <!-- Mobile sidebar toggle -->
+                <div class="block md:hidden mb-4">
+                    <button id="mobile-menu-button" class="p-2 rounded-md bg-white shadow-sm text-[#2E7D32]">
+                        <i data-lucide="menu" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <!-- Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="flex items-center p-4 mb-4 text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %} rounded-lg" role="alert">
+                            <div>{{ message }}</div>
+                            <button type="button" class="ml-auto -mx-1.5 -my-1.5 rounded-lg p-1.5 hover:bg-opacity-30 inline-flex items-center justify-center h-8 w-8 close-alert">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                
+                <!-- Page Content -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    {% block core_content %}{% endblock %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile sidebar -->
+<div id="mobile-sidebar" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="absolute top-0 left-0 h-full w-3/4 bg-white shadow-lg transform transition-transform duration-300 -translate-x-full" id="mobile-sidebar-content">
+        <div class="p-4 bg-[#E8F5E9] flex items-center justify-between">
+            <div class="flex items-center">
+                <i data-lucide="leaf" class="h-6 w-6 text-[#43A047] mr-2"></i>
+                <span class="font-display font-bold text-[#1B5E20]">Natural Remedy</span>
+            </div>
+            <button id="close-sidebar" class="text-[#2E7D32]">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+        </div>
+        
+        <div class="p-4">
+            <div class="flex items-center space-x-3 mb-6">
+                {% if user.profile.profile_image %}
+                    <img src="{{ user.profile.profile_image.url }}" alt="{{ user.username }}" class="rounded-full w-10 h-10 object-cover">
+                {% else %}
+                    <div class="rounded-full w-10 h-10 bg-[#81C784] flex items-center justify-center text-white font-bold">
+                        {{ user.username|make_list|first|upper }}
+                    </div>
+                {% endif %}
+                <div>
+                    <h6 class="font-medium text-[#1B5E20]">{{ user.get_full_name|default:user.username }}</h6>
+                    <a href="{% url 'Core:profile' %}" class="text-xs text-[#43A047]">View Profile</a>
+                </div>
+            </div>
+            
+            <ul class="space-y-1">
+                <li>
+                    <a href="{% url 'Core:dashboard' %}" class="block py-2 px-4 rounded-md {% if request.resolver_match.url_name == 'dashboard' %}bg-[#E8F5E9] text-[#1B5E20]{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %}">
+                        <i data-lucide="layout-dashboard" class="h-5 w-5 inline-block mr-2"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'Core:new_chat' %}" class="block py-2 px-4 rounded-md {% if request.resolver_match.url_name == 'new_chat' or request.resolver_match.url_name == 'chat' %}bg-[#E8F5E9] text-[#1B5E20]{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %}">
+                        <i data-lucide="message-circle" class="h-5 w-5 inline-block mr-2"></i> New Chat
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'Core:encyclopedia' %}" class="block py-2 px-4 rounded-md {% if request.resolver_match.url_name == 'encyclopedia' or request.resolver_match.url_name == 'herb_detail' %}bg-[#E8F5E9] text-[#1B5E20]{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %}">
+                        <i data-lucide="book-open" class="h-5 w-5 inline-block mr-2"></i> Herb Encyclopedia
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'Core:profile' %}" class="block py-2 px-4 rounded-md {% if request.resolver_match.url_name == 'profile' %}bg-[#E8F5E9] text-[#1B5E20]{% else %}text-[#2E7D32] hover:bg-gray-50{% endif %}">
+                        <i data-lucide="user" class="h-5 w-5 inline-block mr-2"></i> My Profile
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="mt-6 pt-4 border-t border-gray-100">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="block py-2 px-4 rounded-md text-red-500 hover:bg-red-50 w-full text-left">
+                        <i data-lucide="log-out" class="h-5 w-5 inline-block mr-2"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile sidebar toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileSidebar = document.getElementById('mobile-sidebar');
+        const mobileSidebarContent = document.getElementById('mobile-sidebar-content');
+        const closeSidebar = document.getElementById('close-sidebar');
+        
+        if (mobileMenuButton && mobileSidebar && closeSidebar) {
+            mobileMenuButton.addEventListener('click', function() {
+                mobileSidebar.classList.remove('hidden');
+                setTimeout(() => {
+                    mobileSidebarContent.classList.remove('-translate-x-full');
+                }, 10);
+            });
+            
+            closeSidebar.addEventListener('click', function() {
+                mobileSidebarContent.classList.add('-translate-x-full');
+                setTimeout(() => {
+                    mobileSidebar.classList.add('hidden');
+                }, 300);
+            });
+            
+            mobileSidebar.addEventListener('click', function(e) {
+                if (e.target === mobileSidebar) {
+                    mobileSidebarContent.classList.add('-translate-x-full');
+                    setTimeout(() => {
+                        mobileSidebar.classList.add('hidden');
+                    }, 300);
+                }
+            });
+        }
+        
+        // Alert dismissal
+        document.querySelectorAll('.close-alert').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('[role="alert"]').remove();
+            });
+        });
+    });
+</script>
+{% endblock %}

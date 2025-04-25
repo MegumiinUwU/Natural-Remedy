@@ -73,7 +73,7 @@
                 {% for feature in features %}
                 <div class="fade-in bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300">
                     <div class="feature-icon bg-[#43A047] text-white rounded-full mb-4 mx-auto w-16 h-16 flex items-center justify-center">
-                        <i data-lucide="{{ feature.icon }}" class="w-8 h-8"></i>
+                        <i class="bi bi-{{ feature.icon }} text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-[#1B5E20] mb-2">{{ feature.title }}</h3>
                     <p class="text-[#388E3C]">{{ feature.description }}</p>

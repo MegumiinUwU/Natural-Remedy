@@ -2,107 +2,103 @@
 {% load static %}
 
 {% block core_content %}
-<div class="row h-100">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">{% if is_new %}New Conversation{% else %}{{ conversation.title }}{% endif %}</h5>
+<div class="flex flex-col h-[calc(100vh-260px)]">
+    <div class="flex-shrink-0 border-b border-gray-100 pb-4 mb-4">
+        <h5 class="text-xl font-bold text-[#1B5E20]">{% if is_new %}New Conversation{% else %}{{ conversation.title }}{% endif %}</h5>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto mb-4 pr-2 space-y-6" id="chat-messages">
+        {% if is_new %}
+            <!-- Welcome message -->
+            <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                    <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                </div>
+                <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                    <p class="text-[#1B5E20]">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                    <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
+                </div>
             </div>
-            <div class="card-body chat-messages" id="chat-messages" style="height: calc(100vh - 250px); overflow-y: auto;">
-                {% if is_new %}
-                    <!-- Welcome message -->
-                    <div class="chat-message bot">
-                        <div class="chat-avatar">
-                            <img src="{% static 'images/bot-avatar.png' %}" alt="Bot">
+        {% else %}
+            {% for message in messages %}
+                <div class="flex items-start {% if message.sender == 'user' %}justify-end{% endif %} space-x-3">
+                    {% if message.sender == 'bot' %}
+                        <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                            <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                         </div>
-                        <div class="chat-bubble">
-                            <p>Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
-                            <p>You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
+                        <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                            <p class="text-[#1B5E20]">{{ message.content }}</p>
+                            <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
-                    </div>
-                {% else %}
-                    {% for message in messages %}
-                    <div class="chat-message {{ message.sender }}">
-                        <div class="chat-avatar">
-                            <img src="{% static 'images/'|add:message.sender|add:'-avatar.png' %}" alt="{{ message.sender|title }}">
+                    {% else %}
+                        <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
+                            <p class="text-[#1565C0]">{{ message.content }}</p>
+                            <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
-                        <div class="chat-bubble">
-                            <p>{{ message.content }}</p>
-                            <small class="text-muted">{{ message.timestamp|time:"H:i" }}</small>
+                        <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                            <i data-lucide="user" class="h-6 w-6 text-[#1565C0]"></i>
                         </div>
-                    </div>
-                    {% endfor %}
-                {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    
+    <div class="flex-shrink-0 border-t border-gray-100 pt-4 mt-auto">
+        <form id="chat-form" class="flex items-center gap-2">
+            {% csrf_token %}
+            <div class="relative flex-1">
+                <input type="text" id="user-input" class="w-full px-5 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#43A047] pr-12" 
+                       placeholder="Type your message here..." required>
+                <button type="submit" class="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#43A047] text-white p-2 rounded-full hover:bg-[#388E3C] transition">
+                    <i data-lucide="send" class="h-5 w-5"></i>
+                </button>
             </div>
-            <div class="card-footer bg-white p-3 border-top">
-                <form id="chat-form" class="d-flex">
-                    {% csrf_token %}
-                    <input type="text" id="user-input" class="form-control me-2" placeholder="Type your message here..." required>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-send"></i>
-                    </button>
-                </form>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_css %}
-{{ block.super }}
 <style>
-    .chat-message {
-        display: flex;
-        margin-bottom: 1rem;
+    /* Custom scrollbar for chat window */
+    #chat-messages::-webkit-scrollbar {
+        width: 6px;
     }
     
-    .chat-message.user {
-        flex-direction: row-reverse;
+    #chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
     }
     
-    .chat-avatar {
-        width: 40px;
-        height: 40px;
-        margin-right: 10px;
-        flex-shrink: 0;
+    #chat-messages::-webkit-scrollbar-thumb {
+        background: #C8E6C9;
+        border-radius: 10px;
     }
     
-    .chat-message.user .chat-avatar {
-        margin-right: 0;
-        margin-left: 10px;
+    #chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #81C784;
     }
     
-    .chat-avatar img {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
+    /* Typing animation dots */
+    .typing-dots span {
+        opacity: 0;
+        animation: typingDot 1.4s infinite;
+        animation-fill-mode: forwards;
     }
     
-    .chat-bubble {
-        background: #f0f2f5;
-        border-radius: 18px;
-        padding: 10px 15px;
-        max-width: 75%;
-        position: relative;
+    .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
     }
     
-    .chat-message.bot .chat-bubble {
-        background: #e9f5e9;
+    .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
     }
     
-    .chat-message.user .chat-bubble {
-        background: #e3f2fd;
-    }
-    
-    .chat-bubble p:last-child {
-        margin-bottom: 0;
-    }
-    
-    .chat-bubble small {
-        position: absolute;
-        bottom: 3px;
-        right: 10px;
-        font-size: 0.75rem;
+    @keyframes typingDot {
+        0% { opacity: 0; }
+        50% { opacity: 1; }
+        100% { opacity: 0; }
     }
 </style>
 {% endblock %}
@@ -134,13 +130,10 @@
             userInput.value = '';
             
             // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            scrollToBottom();
             
             // Add typing indicator
             addTypingIndicator();
-            
-            console.log("Sending message:", message);
-            console.log("Conversation ID:", conversationId);
             
             // Send message to server using fetch API
             fetch('{% url "Core:send_message" %}', {
@@ -155,14 +148,12 @@
                 })
             })
             .then(response => {
-                console.log("Response status:", response.status);
                 if (!response.ok) {
                     throw new Error(`Server responded with status ${response.status}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log("Received data:", data);
                 // Remove typing indicator
                 removeTypingIndicator();
                 
@@ -170,7 +161,6 @@
                     // Update conversation ID if this is a new conversation
                     if (!conversationId) {
                         conversationId = data.conversation_id;
-                        console.log("New conversation created with ID:", conversationId);
                         
                         // Update URL to include conversation ID
                         history.pushState(null, '', `/core/chat/${conversationId}/`);
@@ -180,7 +170,7 @@
                     addMessage(data.bot_response, 'bot', data.timestamp);
                     
                     // Scroll to bottom
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    scrollToBottom();
                 } else {
                     console.error("Error from server:", data.message);
                     addSystemMessage("Sorry, there was an error processing your request.");
@@ -195,47 +185,77 @@
         
         function addMessage(text, sender, time) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${sender}`;
+            messageDiv.className = `flex items-start ${sender === 'user' ? 'justify-end' : ''} space-x-3`;
             
-            const avatarImage = sender === 'user' 
-                ? "{% static 'images/user-avatar.png' %}" 
-                : "{% static 'images/bot-avatar.png' %}";
-            
-            messageDiv.innerHTML = `
-                <div class="chat-avatar">
-                    <img src="${avatarImage}" alt="${sender === 'user' ? 'You' : 'Bot'}">
-                </div>
-                <div class="chat-bubble">
-                    <p>${text}</p>
-                    <small class="text-muted">${time}</small>
-                </div>
-            `;
+            if (sender === 'bot') {
+                messageDiv.innerHTML = `
+                    <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                        <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                    </div>
+                    <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                        <p class="text-[#1B5E20]">${text}</p>
+                        <span class="text-xs text-gray-500 mt-1 block">${time}</span>
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
+                        <p class="text-[#1565C0]">${text}</p>
+                        <span class="text-xs text-gray-500 mt-1 block">${time}</span>
+                    </div>
+                    <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                        <i data-lucide="user" class="h-6 w-6 text-[#1565C0]"></i>
+                    </div>
+                `;
+            }
             
             chatMessages.appendChild(messageDiv);
+            
+            // Initialize Lucide icons in the newly added message
+            lucide.createIcons({
+                attrs: {
+                    class: ["h-6", "w-6"]
+                },
+                elementQuerySelector: messageDiv
+            });
         }
         
         function addSystemMessage(text) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = 'alert alert-warning mx-4 my-2 text-center';
-            messageDiv.textContent = text;
+            messageDiv.className = 'flex justify-center my-4';
+            messageDiv.innerHTML = `
+                <div class="bg-yellow-100 text-yellow-700 rounded-md px-4 py-2 text-sm">
+                    ${text}
+                </div>
+            `;
             chatMessages.appendChild(messageDiv);
+            scrollToBottom();
         }
         
         function addTypingIndicator() {
             const typingDiv = document.createElement('div');
-            typingDiv.className = 'chat-message bot typing-indicator';
+            typingDiv.className = 'flex items-start space-x-3 typing-indicator';
             typingDiv.id = 'typing-indicator';
             
             typingDiv.innerHTML = `
-                <div class="chat-avatar">
-                    <img src="{% static 'images/bot-avatar.png' %}" alt="Bot">
+                <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                    <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                 </div>
-                <div class="chat-bubble">
-                    <p><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                    <p class="text-[#1B5E20]"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></p>
                 </div>
             `;
             
             chatMessages.appendChild(typingDiv);
+            scrollToBottom();
+            
+            // Initialize Lucide icons in the typing indicator
+            lucide.createIcons({
+                attrs: {
+                    class: ["h-6", "w-6"]
+                },
+                elementQuerySelector: typingDiv
+            });
         }
         
         function removeTypingIndicator() {
@@ -244,27 +264,10 @@
                 typingIndicator.remove();
             }
         }
+        
+        function scrollToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     });
 </script>
-<style>
-    .typing-dots span {
-        opacity: 0;
-        animation: typingDot 1.4s infinite;
-        animation-fill-mode: forwards;
-    }
-    
-    .typing-dots span:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-    
-    .typing-dots span:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-    
-    @keyframes typingDot {
-        0% { opacity: 0; }
-        50% { opacity: 1; }
-        100% { opacity: 0; }
-    }
-</style>
 {% endblock %}

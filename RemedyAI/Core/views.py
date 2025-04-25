@@ -185,3 +185,4 @@ def herb_detail(request, herb_id):
         'herb': herb
     }
     return render(request, 'Core/herb_detail.html', context)
+
