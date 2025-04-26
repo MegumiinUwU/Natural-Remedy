@@ -8,9 +8,133 @@ import json
 import logging
 import uuid
 import traceback
+import sys
+import os
+import importlib.util
+from dotenv import load_dotenv
 
 # Set up logger
 logger = logging.getLogger(__name__)
+
+# Load environment variables from .env file
+dotenv_path = os.path.join("f:\\coding\\Hackathon ALX\\app", ".env")
+load_dotenv(dotenv_path)
+logger.info(f"Loaded environment variables from {dotenv_path}")
+logger.info(f"GROQ_API_KEY is {'set' if os.environ.get('GROQ_API_KEY') else 'not set'}")
+
+# Add the correct absolute path to the parent directory containing RAG.py
+app_dir = "f:\\coding\\Hackathon ALX\\app"
+if app_dir not in sys.path:
+    sys.path.append(app_dir)
+    logger.info(f"Added {app_dir} to Python path")
+
+# Define paths to important files
+rag_path = os.path.join(app_dir, "RAG.py")
+retriever_path = os.path.join(app_dir, "retriever.py")
+
+# Helper function to load the AI modules
+def load_ai_modules():
+    try:
+        # Check if files exist
+        if not os.path.exists(rag_path) or not os.path.exists(retriever_path):
+            if not os.path.exists(rag_path):
+                logger.error(f"RAG.py not found at {rag_path}")
+            if not os.path.exists(retriever_path):
+                logger.error(f"retriever.py not found at {retriever_path}")
+            return None, None
+            
+        # Import retriever.py first since RAG depends on it
+        spec = importlib.util.spec_from_file_location("retriever", retriever_path)
+        retriever_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(retriever_module)
+        knowledge_base_class = retriever_module.KnowledgeBase
+        logger.info("Successfully imported KnowledgeBase class")
+        
+        # Instead of importing the entire RAG.py which has code that runs at import time,
+        # we'll create a modified version of the AI_respond function
+        
+        from langchain_groq import ChatGroq
+        from langchain_core.prompts import ChatPromptTemplate
+        
+        # Create the LLM instance
+        llm = ChatGroq(
+            model="llama-3.1-8b-instant",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+        )
+        
+        # Initialize the KnowledgeBase with the existing collection
+        # This will connect to the existing database instead of trying to load files
+        kb_instance = knowledge_base_class(collection_name="herbal_books_chunks")
+        logger.info("Successfully initialized KnowledgeBase with existing collection")
+        
+        # Define the AI_respond function directly from the original without importing it
+        def ai_respond(human_prompt, kb, history=None, top_k=3):
+            """
+            RAG-based response system.
+            
+            Args:
+                human_prompt: The user's question.
+                kb: Your KnowledgeBase instance.
+                top_k: How many chunks to retrieve.
+
+            Returns:
+                The AI's response string.
+            """
+            # Ensure history is a list
+            if history is None:
+                history = []
+
+            system_message = """
+                You are a helpful RAG System that Recommends Herbs and general health advices.
+                Answer based only on the provided context chunks: {retrieved_chunks}.
+                Important: If the user's conditions make a herb or recommendation risky, kindly mention it.
+                If you don't find the answer in the context, say "I don't know based on the given information."
+            """
+
+            full_chat = [("system", system_message)]
+
+            for past_human, past_ai in history:
+                full_chat.append(("human", past_human))
+                full_chat.append(("ai", past_ai))
+
+            # Add the new incoming human question
+            full_chat.append(("human", "{human_question}"))
+
+            # Create ChatPromptTemplate
+            prompt = ChatPromptTemplate.from_messages(full_chat)
+
+            # Retrieve top-k similar chunks
+            results = kb.query_similar_chunks(human_prompt, n_results=top_k)
+
+            # Combine retrieved context
+            chunks_texts = []
+            for metadata in results["metadatas"][0]:
+                chunks_texts.append(metadata["content"])
+
+            combined_chunks = "\n\n".join(chunks_texts)
+
+            # Build the chain and invoke
+            chain = prompt | llm
+
+            response = chain.invoke(
+                {
+                    "retrieved_chunks": combined_chunks,
+                    "human_question": human_prompt,
+                }
+            )
+
+            return response.content
+        
+        logger.info("Successfully created AI_respond function")
+        return ai_respond, kb_instance
+        
+    except Exception as e:
+        logger.error(f"Failed to import RAG modules: {str(e)}")
+        logger.error(traceback.format_exc())
+        return None, None
 
 @login_required
 def dashboard(request):
@@ -223,50 +347,84 @@ def send_message(request):
                 })
                 
             # Regular chat flow
-            # Here you would integrate with your AI backend to get a response
-            # For now, we'll use a simple mock response
-            bot_responses = [
-                "Based on your symptoms, chamomile tea might help. It has anti-inflammatory properties and can help with relaxation.",
-                "I'd recommend trying ginger for that. It's effective for nausea and has anti-inflammatory benefits.",
-                "Lavender essential oil could be beneficial here. It's known for its calming effects and can help with sleep issues.",
-                "Peppermint might be worth trying. It's excellent for digestive issues and can help with headaches too.",
-                "Turmeric with black pepper could help with those inflammation symptoms. It's a powerful natural anti-inflammatory."
-            ]
-            
-            # If user has preferences, personalize the response
-            preferences = None
-            try:
-                preferences = request.user.preferences
-                logger.info(f"Found preferences for user {request.user.username}: {preferences.age_group}, {preferences.wellness_goal}, {preferences.allergies}")
-            except Exception as e:
-                logger.warning(f"Could not get preferences for user: {str(e)}")
-            
-            if preferences and preferences.wellness_goal:
-                # For a real app, you would use the preferences to provide tailored responses
-                # Here we're just demonstrating the concept
-                if preferences.wellness_goal == 'stress_relief':
-                    bot_responses = [
-                        "For stress relief, I highly recommend chamomile tea or lavender essential oil.",
-                        "Have you tried passionflower for stress? It's particularly effective for anxiety-related stress."
-                    ]
-                elif preferences.wellness_goal == 'better_sleep':
-                    bot_responses = [
-                        "For better sleep, valerian root or melatonin supplements might be beneficial.",
-                        "Lavender essential oil in a diffuser by your bed can really improve sleep quality."
-                    ]
-                elif preferences.wellness_goal == 'digestive_health':
-                    bot_responses = [
-                        "For digestive issues, ginger tea is excellent. It helps with nausea and general stomach discomfort.",
-                        "Peppermint tea is very effective for indigestion and bloating. It relaxes the digestive tract muscles."
-                    ]
-                elif preferences.wellness_goal == 'pain_relief':
-                    bot_responses = [
-                        "For pain relief, turmeric with black pepper can be very effective as a natural anti-inflammatory.",
-                        "White willow bark contains salicin, which is similar to aspirin and can help with pain management."
-                    ]
-            
-            import random
-            bot_message = random.choice(bot_responses)
+            # Load AI modules
+            AI_respond, kb = load_ai_modules()
+            if not AI_respond or not kb:
+                logger.error("AI modules could not be loaded")
+                bot_message = "I apologize, but I encountered an issue with the AI system. Please try again later."
+            else:
+                # Get conversation history for AI_respond
+                history = []
+                if conversation_id:
+                    # Get previous messages for this conversation
+                    previous_messages = Message.objects.filter(conversation=conversation).order_by('timestamp')
+                    
+                    # Format messages as (human, ai) tuples for history
+                    for i in range(0, len(previous_messages) - 1, 2):
+                        if i+1 < len(previous_messages):
+                            if previous_messages[i].sender == 'user' and previous_messages[i+1].sender == 'bot':
+                                history.append((previous_messages[i].content, previous_messages[i+1].content))
+                
+                logger.debug(f"Collected {len(history)} historical message pairs")
+                
+                # If user has preferences, we can add those to the user's query
+                preferences_text = ""
+                try:
+                    preferences = request.user.preferences
+                    if preferences:
+                        if preferences.age_group:
+                            age_mapping_reverse = {
+                                "under_18": "Under 18",
+                                "18_35": "18-35",
+                                "36_50": "36-50", 
+                                "51_plus": "51+"
+                            }
+                            preferences_text += f" Age group: {age_mapping_reverse.get(preferences.age_group, 'Not specified')}."
+                        
+                        if preferences.wellness_goal:
+                            goal_mapping_reverse = {
+                                "stress_relief": "Stress Relief",
+                                "better_sleep": "Better Sleep",
+                                "digestive_health": "Digestive Health",
+                                "pain_relief": "Pain Relief",
+                                "other": "Other"
+                            }
+                            preferences_text += f" Goal: {goal_mapping_reverse.get(preferences.wellness_goal, 'Not specified')}."
+                        
+                        if preferences.allergies:
+                            allergy_mapping_reverse = {
+                                "none": "None",
+                                "pollen": "Pollen",
+                                "nuts": "Nuts",
+                                "other": "Other"
+                            }
+                            allergies_text = allergy_mapping_reverse.get(preferences.allergies, 'Not specified')
+                            if allergies_text == "Other" and preferences.other_allergies:
+                                allergies_text += f": {preferences.other_allergies}"
+                            preferences_text += f" Allergies: {allergies_text}."
+                            
+                        logger.info(f"Added user preferences to query: {preferences_text}")
+                except Exception as e:
+                    logger.warning(f"Could not get preferences for user: {str(e)}")
+                
+                try:
+                    # Call the AI_respond function with context-enhanced query
+                    enhanced_query = user_message
+                    if preferences_text:
+                        enhanced_query += f"\n\nUser information: {preferences_text}"
+                    
+                    logger.info(f"Sending enhanced query to AI_respond: {enhanced_query[:100]}...")
+                    bot_message = AI_respond(
+                        human_prompt=enhanced_query,
+                        kb=kb,
+                        history=history,
+                        top_k=3  # You can adjust this parameter
+                    )
+                    logger.info(f"Received response from AI_respond: {bot_message[:100]}...")
+                except Exception as e:
+                    logger.error(f"Error calling AI_respond: {str(e)}")
+                    logger.error(traceback.format_exc())
+                    bot_message = "I apologize, but I encountered an issue generating a response. Please try again."
             
             # Save bot response
             bot_response = Message.objects.create(
@@ -369,4 +527,18 @@ def herb_detail(request, herb_id):
         'herb': herb
     }
     return render(request, 'Core/herb_detail.html', context)
+
+@login_required
+def delete_chat(request, chat_id):
+    """Delete a conversation/chat"""
+    try:
+        conversation = get_object_or_404(Conversation, id=chat_id, user=request.user)
+        title = conversation.title
+        conversation.delete()
+        messages.success(request, f'Chat "{title}" has been deleted successfully.')
+    except Exception as e:
+        logger.error(f"Error deleting conversation {chat_id}: {str(e)}")
+        messages.error(request, 'An error occurred while trying to delete the chat.')
+    
+    return redirect('Core:dashboard')
 

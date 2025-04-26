@@ -8,6 +8,7 @@ urlpatterns = [
     path('chat/', views.chat, name='new_chat'),
     path('chat/<int:chat_id>/', views.chat, name='chat'),
     path('chat/send/', views.send_message, name='send_message'),
+    path('chat/delete/<int:chat_id>/', views.delete_chat, name='delete_chat'),
     path('profile/', views.profile, name='profile'),
     path('encyclopedia/', views.encyclopedia, name='encyclopedia'),
     path('herb/<int:herb_id>/', views.herb_detail, name='herb_detail'),

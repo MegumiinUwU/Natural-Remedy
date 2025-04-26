@@ -77,18 +77,25 @@
         {% if chat_history %}
             <div class="space-y-4">
                 {% for chat in chat_history %}
-                    <a href="{% url 'Core:chat' chat.id %}" class="block bg-[#F9FDF9] hover:bg-[#F1F8F1] p-4 rounded-lg transition-colors">
+                    <div class="bg-[#F9FDF9] hover:bg-[#F1F8F1] p-4 rounded-lg transition-colors">
                         <div class="flex justify-between items-start">
-                            <div class="flex items-center">
+                            <div class="flex items-center flex-grow">
                                 <div class="bg-[#E8F5E9] p-2 rounded-full">
                                     <i data-lucide="message-square" class="h-5 w-5 text-[#43A047]"></i>
                                 </div>
-                                <h3 class="ml-3 font-medium text-[#1B5E20]">{{ chat.title }}</h3>
+                                <a href="{% url 'Core:chat' chat.id %}" class="ml-3 font-medium text-[#1B5E20]">{{ chat.title }}</a>
                             </div>
-                            <span class="text-xs text-[#388E3C] bg-[#E8F5E9] px-2 py-1 rounded-full">{{ chat.date }}</span>
+                            <div class="flex items-center">
+                                <span class="text-xs text-[#388E3C] bg-[#E8F5E9] px-2 py-1 rounded-full mr-2">{{ chat.date }}</span>
+                                <a href="{% url 'Core:delete_chat' chat.id %}" 
+                                   class="delete-chat-btn text-red-500 hover:text-red-700 transition-colors p-1"
+                                   onclick="return confirm('Are you sure you want to delete this chat?');">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                </a>
+                            </div>
                         </div>
                         <p class="mt-2 text-[#388E3C] text-sm pl-10">{{ chat.preview }}</p>
-                    </a>
+                    </div>
                 {% endfor %}
             </div>
         {% else %}
