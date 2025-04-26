@@ -2,8 +2,8 @@
 {% load static %}
 
 {% block content %}
-<div class="bg-[#FFFBF2] min-h-screen pt-32">
-    <div class="container mx-auto px-4">
+<div class="bg-[#FFFBF2] min-h-screen pt-32 pb-16">
+    <div class="container mx-auto px-4 mb-10">
         <div class="flex flex-col md:flex-row gap-6">
             <!-- Sidebar -->
             <div class="w-full md:w-72 bg-white rounded-lg shadow-md overflow-hidden">
@@ -73,7 +73,7 @@
                 </div>
                 
                 <!-- Messages -->
-                {% if messages %}
+                <!-- {% if messages %}
                     {% for message in messages %}
                         <div class="flex items-center p-4 mb-4 text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %} rounded-lg" role="alert">
                             <div>{{ message }}</div>
@@ -82,7 +82,7 @@
                             </button>
                         </div>
                     {% endfor %}
-                {% endif %}
+                {% endif %} -->
                 
                 <!-- Page Content -->
                 <div class="bg-white rounded-lg shadow-md p-6">

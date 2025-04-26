@@ -37,6 +37,9 @@ urlpatterns = [
     path('', include('Landing.urls')),
     path('core/', include('Core.urls')),
     
+    # Guest chat - properly include the URLs
+    path('guest-chat/', include('GuestChat.urls')),
+    
     # Authentication URLs
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),

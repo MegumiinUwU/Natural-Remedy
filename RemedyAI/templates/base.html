@@ -48,7 +48,7 @@
                     </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button">
                                 <i class="bi bi-person-circle me-1"></i>{{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -153,53 +153,45 @@
     <script src="{% static 'js/main.js' %}"></script>
     
     <script>
-        // Fix for dropdown closing too quickly
         document.addEventListener('DOMContentLoaded', function() {
             const dropdownToggle = document.querySelector('.dropdown-toggle');
             const dropdownMenu = document.querySelector('.dropdown-menu');
             
             if (dropdownToggle && dropdownMenu) {
+                // Remove the data-bs-toggle attribute that Bootstrap adds automatically
+                // This prevents the default Bootstrap dropdown behavior
+                dropdownToggle.removeAttribute('data-bs-toggle');
+                
                 let isDropdownOpen = false;
                 
-                // Keep track of whether we're hovering over the dropdown or its menu
-                let isHoveringDropdown = false;
-                let isHoveringMenu = false;
-                
-                dropdownToggle.addEventListener('mouseenter', function() {
-                    isHoveringDropdown = true;
-                    setTimeout(function() {
-                        if (isHoveringDropdown || isHoveringMenu) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.show();
-                            isDropdownOpen = true;
-                        }
-                    }, 100);
+                // Toggle dropdown on click
+                dropdownToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    if (isDropdownOpen) {
+                        dropdownMenu.classList.remove('show');
+                        isDropdownOpen = false;
+                    } else {
+                        dropdownMenu.classList.add('show');
+                        isDropdownOpen = true;
+                    }
                 });
                 
-                dropdownToggle.addEventListener('mouseleave', function() {
-                    isHoveringDropdown = false;
-                    setTimeout(function() {
-                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.hide();
-                            isDropdownOpen = false;
-                        }
-                    }, 200);
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (isDropdownOpen && !dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                        isDropdownOpen = false;
+                    }
                 });
                 
-                dropdownMenu.addEventListener('mouseenter', function() {
-                    isHoveringMenu = true;
-                });
-                
-                dropdownMenu.addEventListener('mouseleave', function() {
-                    isHoveringMenu = false;
-                    setTimeout(function() {
-                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.hide();
-                            isDropdownOpen = false;
-                        }
-                    }, 200);
+                // Prevent automatic closing when clicking inside the dropdown menu
+                dropdownMenu.addEventListener('click', function(e) {
+                    // Don't stop propagation for form submissions
+                    if (!e.target.closest('form')) {
+                        e.stopPropagation();
+                    }
                 });
             }
         });
