@@ -48,7 +48,7 @@
                     </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button">
                                 <i class="bi bi-person-circle me-1"></i>{{ user.username }}
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
@@ -158,79 +158,40 @@
             const dropdownMenu = document.querySelector('.dropdown-menu');
             
             if (dropdownToggle && dropdownMenu) {
+                // Remove the data-bs-toggle attribute that Bootstrap adds automatically
+                // This prevents the default Bootstrap dropdown behavior
+                dropdownToggle.removeAttribute('data-bs-toggle');
+                
                 let isDropdownOpen = false;
                 
-                // Keep track of whether we're hovering over the dropdown or its menu
-                let isHoveringDropdown = false;
-                let isHoveringMenu = false;
-                
-                // Add a longer timeout for the menu to close
-                let closeTimeout;
-                
-                dropdownToggle.addEventListener('mouseenter', function() {
-                    isHoveringDropdown = true;
-                    // Clear any existing timeout when re-entering
-                    if (closeTimeout) {
-                        clearTimeout(closeTimeout);
-                    }
-                    setTimeout(function() {
-                        if (isHoveringDropdown || isHoveringMenu) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.show();
-                            isDropdownOpen = true;
-                        }
-                    }, 100);
-                });
-                
-                dropdownToggle.addEventListener('mouseleave', function() {
-                    isHoveringDropdown = false;
-                    // Use a much longer timeout to give user time to move to the menu
-                    closeTimeout = setTimeout(function() {
-                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.hide();
-                            isDropdownOpen = false;
-                        }
-                    }, 1000); // Increased from 500ms to 1000ms
-                });
-                
-                dropdownMenu.addEventListener('mouseenter', function() {
-                    isHoveringMenu = true;
-                    // Clear any pending close when entering the menu
-                    if (closeTimeout) {
-                        clearTimeout(closeTimeout);
-                    }
-                });
-                
-                dropdownMenu.addEventListener('mouseleave', function() {
-                    isHoveringMenu = false;
-                    closeTimeout = setTimeout(function() {
-                        if (!isHoveringDropdown && !isHoveringMenu && isDropdownOpen) {
-                            const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                            bsDropdown.hide();
-                            isDropdownOpen = false;
-                        }
-                    }, 1000); // Increased from 500ms to 1000ms
-                });
-                
-                // Add click handler for mobile devices
+                // Toggle dropdown on click
                 dropdownToggle.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
+                    
                     if (isDropdownOpen) {
-                        const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                        bsDropdown.hide();
+                        dropdownMenu.classList.remove('show');
                         isDropdownOpen = false;
                     } else {
-                        const bsDropdown = new bootstrap.Dropdown(dropdownToggle);
-                        bsDropdown.show();
+                        dropdownMenu.classList.add('show');
                         isDropdownOpen = true;
+                    }
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (isDropdownOpen && !dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.remove('show');
+                        isDropdownOpen = false;
                     }
                 });
                 
                 // Prevent automatic closing when clicking inside the dropdown menu
                 dropdownMenu.addEventListener('click', function(e) {
-                    e.stopPropagation();
+                    // Don't stop propagation for form submissions
+                    if (!e.target.closest('form')) {
+                        e.stopPropagation();
+                    }
                 });
             }
         });

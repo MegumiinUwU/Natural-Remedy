@@ -138,10 +138,13 @@
         const chatMessages = document.getElementById('chat-messages');
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        // {% if conversation %}
+        // Get conversation ID if it exists
         let conversationId = "{{ conversation.id|default:'' }}";
         conversationId = conversationId === "" ? null : conversationId;
-        // {% endif %}
+        
+        // Track personalization state
+        let currentPersonalizationStep = null;
+        let personalizationComplete = false;
         
         // Scroll to bottom of chat on load
         chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -156,6 +159,13 @@
         if (guestOption && personalizedOption) {
             guestOption.addEventListener('click', function() {
                 addMessage("You chose to stay as a guest. Feel free to ask your questions!", 'bot', new Date().toTimeString().slice(0, 5));
+                personalizationComplete = true;
+                
+                // Enable the chat input
+                userInput.disabled = false;
+                userInput.placeholder = "Type your message here...";
+                userInput.focus();
+                
                 scrollToBottom();
             });
             
@@ -214,10 +224,23 @@
         }
         
         function startPersonalization() {
+            // Define personalization questions with preference keys
             const questions = [
-                { question: "What is your age group?", options: ["Under 18", "18-35", "36-50", "51+"] },
-                { question: "What is your primary wellness goal?", options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief"] },
-                { question: "Do you have any known allergies?", options: ["None", "Pollen", "Nuts", "Other"] }
+                { 
+                    question: "What is your age group?", 
+                    options: ["Under 18", "18-35", "36-50", "51+"],
+                    preferenceKey: "age_group"
+                },
+                { 
+                    question: "What is your primary wellness goal?", 
+                    options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief", "Other"],
+                    preferenceKey: "wellness_goal"
+                },
+                { 
+                    question: "Do you have any known allergies?", 
+                    options: ["None", "Pollen", "Nuts", "Other"],
+                    preferenceKey: "allergies"
+                }
             ];
             
             let currentQuestionIndex = 0;
@@ -225,6 +248,9 @@
             function askNextQuestion() {
                 if (currentQuestionIndex < questions.length) {
                     const currentQuestion = questions[currentQuestionIndex];
+                    currentPersonalizationStep = currentQuestion.preferenceKey;
+                    console.log("Asking question about:", currentPersonalizationStep);
+                    
                     const questionDiv = document.createElement('div');
                     questionDiv.className = 'flex items-start space-x-3';
                     questionDiv.innerHTML = `
@@ -233,8 +259,12 @@
                         </div>
                         <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
                             <p class="text-[#1B5E20]">${currentQuestion.question}</p>
-                            <div class="flex flex-wrap gap-4 mt-4">
-                                ${currentQuestion.options.map(option => `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>${option}</button>`).join('')}
+                            <div class="flex flex-wrap gap-4 mt-4 option-buttons-container">
+                                ${currentQuestion.options.map(option => 
+                                    `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition' 
+                                    data-preference-key="${currentQuestion.preferenceKey}" 
+                                    data-option-value="${option}">${option}</button>`
+                                ).join('')}
                             </div>
                         </div>
                     `;
@@ -250,27 +280,165 @@
                     
                     const optionButtons = questionDiv.querySelectorAll('.option-btn');
                     optionButtons.forEach(button => {
-                        button.addEventListener('click', function() {
-                            addMessage(button.textContent, 'user', new Date().toTimeString().slice(0, 5));
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const selectedOption = this.textContent.trim();
+                            const preferenceKey = this.dataset.preferenceKey;
+                            
+                            console.log("Selected option:", selectedOption, "for key:", preferenceKey);
+                            
+                            // Disable all option buttons in this container to prevent multiple selections
+                            const buttonContainer = this.closest('.option-buttons-container');
+                            buttonContainer.querySelectorAll('.option-btn').forEach(btn => {
+                                btn.disabled = true;
+                                btn.classList.add('opacity-50');
+                            });
+                            
+                            // Highlight the selected button
+                            this.classList.remove('opacity-50');
+                            this.classList.add('ring-2', 'ring-white');
+                            
+                            // Add the user's response to the chat
+                            addMessage(selectedOption, 'user', new Date().toTimeString().slice(0, 5));
+                            
+                            // Send the personalization data to the server
+                            sendPersonalizationResponse(selectedOption, preferenceKey);
+                            
+                            // If this is "Other" for allergies, prompt for more details
+                            if (preferenceKey === 'allergies' && selectedOption === 'Other') {
+                                // Show input for specifying allergies
+                                const otherInputDiv = document.createElement('div');
+                                otherInputDiv.className = 'flex items-start space-x-3';
+                                otherInputDiv.innerHTML = `
+                                    <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                                        <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                                    </div>
+                                    <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                                        <p class="text-[#1B5E20]">Please specify your allergies:</p>
+                                        <div class="flex flex-wrap gap-4 mt-4">
+                                            <input type="text" id="other-allergy-input" class="border border-gray-300 rounded-md px-3 py-2 w-full" placeholder="Enter your allergies...">
+                                            <button id="submit-other-allergy" class='bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>Submit</button>
+                                        </div>
+                                    </div>
+                                `;
+                                chatMessages.appendChild(otherInputDiv);
+                                
+                                // Initialize Lucide icons
+                                lucide.createIcons({
+                                    attrs: {
+                                        class: ["h-6", "w-6"]
+                                    },
+                                    elementQuerySelector: otherInputDiv
+                                });
+                                
+                                // Set up event listener for the submit button
+                                document.getElementById('submit-other-allergy').addEventListener('click', function() {
+                                    const otherAllergy = document.getElementById('other-allergy-input').value.trim();
+                                    if (otherAllergy) {
+                                        sendPersonalizationResponse(otherAllergy, 'other_allergies');
+                                        addMessage(otherAllergy, 'user', new Date().toTimeString().slice(0, 5));
+                                        currentQuestionIndex++;
+                                        finishPersonalization();
+                                    }
+                                });
+                                
+                                scrollToBottom();
+                                return;
+                            }
+                            
                             currentQuestionIndex++;
-                            askNextQuestion();
+                            if (currentQuestionIndex < questions.length) {
+                                setTimeout(function() {
+                                    askNextQuestion();
+                                }, 500);
+                            } else {
+                                finishPersonalization();
+                            }
                         });
                     });
                     
                     scrollToBottom();
-                } else {
-                    addMessage("Thank you for providing your details! Let's get started with personalized recommendations.", 'bot', new Date().toTimeString().slice(0, 5));
-                    
-                    // Clear chat for unregistered users after a delay
-                    if (!conversationId) {
-                        setTimeout(() => {
-                            addMessage("Your data has been saved to provide you with better recommendations in this session.", 'bot', new Date().toTimeString().slice(0, 5));
-                        }, 2000); // Delay to show the thank you message
-                    }
                 }
             }
             
+            function finishPersonalization() {
+                addMessage("Thank you for providing your details! I'll now give you personalized recommendations based on your preferences.", 'bot', new Date().toTimeString().slice(0, 5));
+                personalizationComplete = true;
+                currentPersonalizationStep = null;
+                
+                // Update the UI to show the chat input is now available
+                userInput.disabled = false;
+                userInput.placeholder = "Type your message here...";
+                userInput.focus();
+                
+                scrollToBottom();
+            }
+            
+            // Start the personalization flow
             askNextQuestion();
+            
+            // Disable the regular chat input until personalization is complete
+            userInput.disabled = true;
+            userInput.placeholder = "Please complete the personalization steps above...";
+        }
+        
+        function sendPersonalizationResponse(answer, preferenceKey) {
+            console.log("Sending personalization response:", answer, "for key:", preferenceKey);
+            
+            // Add typing indicator to show that the system is processing
+            addTypingIndicator();
+            
+            fetch('{% url "Core:send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    message: answer,
+                    conversation_id: conversationId,
+                    message_type: 'answer',
+                    preference_key: preferenceKey,
+                    is_personalization: true
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                console.log("Personalization response:", data);
+                
+                if (data.status === 'success') {
+                    // Update conversation ID if this is a new conversation
+                    if (!conversationId) {
+                        conversationId = data.conversation_id;
+                        
+                        // Update URL to include conversation ID
+                        history.pushState(null, '', `/core/chat/${conversationId}/`);
+                    }
+                    
+                    // If the server sent a bot response to show
+                    if (data.bot_response) {
+                        console.log("Adding bot response:", data.bot_response);
+                        addMessage(data.bot_response, 'bot', data.timestamp);
+                        scrollToBottom();
+                    }
+                } else {
+                    console.error("Error from server:", data.message);
+                    addSystemMessage("Sorry, there was an error processing your preferences.");
+                }
+            })
+            .catch(error => {
+                removeTypingIndicator();
+                console.error('Error:', error);
+                addSystemMessage("Sorry, there was a network error. Please try again.");
+            });
         }
         
         chatForm.addEventListener('submit', function(e) {
@@ -298,7 +466,9 @@
                 },
                 body: JSON.stringify({
                     message: message,
-                    conversation_id: conversationId
+                    conversation_id: conversationId,
+                    message_type: currentPersonalizationStep ? 'answer' : 'general',
+                    preference_key: currentPersonalizationStep
                 })
             })
             .then(response => {

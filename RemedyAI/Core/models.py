@@ -41,11 +41,53 @@ class Command(BaseCommand):
                 self.stdout.write(f"Created profile for {user.username}")
         self.stdout.write(self.style.SUCCESS('All users now have profiles'))
 
+class UserPreferences(models.Model):
+    """Store user preferences collected during chat personalization"""
+    AGE_GROUP_CHOICES = (
+        ('under_18', 'Under 18'),
+        ('18_35', '18-35'),
+        ('36_50', '36-50'),
+        ('51_plus', '51+'),
+    )
+    
+    WELLNESS_GOAL_CHOICES = (
+        ('stress_relief', 'Stress Relief'),
+        ('better_sleep', 'Better Sleep'),
+        ('digestive_health', 'Digestive Health'),
+        ('pain_relief', 'Pain Relief'),
+        ('other', 'Other'),
+    )
+    
+    ALLERGY_CHOICES = (
+        ('none', 'None'),
+        ('pollen', 'Pollen'),
+        ('nuts', 'Nuts'),
+        ('other', 'Other'),
+    )
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences', null=True, blank=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True, help_text="For non-logged in users")
+    age_group = models.CharField(max_length=20, choices=AGE_GROUP_CHOICES, null=True, blank=True)
+    wellness_goal = models.CharField(max_length=20, choices=WELLNESS_GOAL_CHOICES, null=True, blank=True)
+    allergies = models.CharField(max_length=20, choices=ALLERGY_CHOICES, null=True, blank=True)
+    other_allergies = models.TextField(blank=True, help_text="If 'Other' is selected for allergies")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        if self.user:
+            return f"Preferences for {self.user.username}"
+        else:
+            return f"Guest preferences ({self.session_id[:8]})"
+
 class Conversation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
     title = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    is_personalized = models.BooleanField(default=False, help_text="Whether this conversation uses personalized preferences")
+    preferences = models.ForeignKey(UserPreferences, on_delete=models.SET_NULL, null=True, blank=True, 
+                                   related_name='conversations', help_text="User preferences for this conversation")
     
     class Meta:
         ordering = ['-updated_at']
@@ -71,10 +113,20 @@ class Message(models.Model):
         ('bot', 'Bot'),
     )
     
+    MESSAGE_TYPE_CHOICES = (
+        ('general', 'General Message'),
+        ('question', 'Preference Question'),
+        ('answer', 'Preference Answer'),
+        ('recommendation', 'Remedy Recommendation'),
+    )
+    
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.CharField(max_length=10, choices=SENDER_CHOICES)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+    message_type = models.CharField(max_length=20, choices=MESSAGE_TYPE_CHOICES, default='general')
+    preference_key = models.CharField(max_length=30, blank=True, null=True, 
+                                     help_text="For preference questions/answers, the key being asked about")
     
     class Meta:
         ordering = ['timestamp']
