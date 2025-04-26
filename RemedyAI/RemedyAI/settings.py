@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # Project apps
     'Landing',
     'Core',
+    'GuestChat',
 ]
 
 MIDDLEWARE = [

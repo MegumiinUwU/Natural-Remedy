@@ -5,95 +5,44 @@
 <div class="flex flex-col h-[calc(100vh-260px)]">
     <div class="flex-shrink-0 border-b border-gray-100 pb-4 mb-4">
         <div class="flex justify-between items-center">
-            <h5 class="text-xl font-bold text-[#1B5E20]">{% if is_new %}New Conversation{% else %}{{ conversation.title }}{% endif %}</h5>
-            {% if not is_new %}
-            <a href="{% url 'Core:delete_chat' chat_id %}" 
-               class="text-red-500 hover:text-red-700 transition-colors p-2 rounded-md hover:bg-red-50"
-               onclick="return confirm('Are you sure you want to delete this chat?');">
-                <i data-lucide="trash-2" class="h-4 w-4"></i>
+            <h5 class="text-xl font-bold text-[#1B5E20]">Guest Chat</h5>
+            <a href="{% url 'register' %}" 
+               class="text-[#43A047] hover:text-[#2E7D32] transition-colors p-2 rounded-md hover:bg-green-50">
+                <i data-lucide="user-plus" class="h-4 w-4 mr-1 inline-block"></i>
+                Register for full access
             </a>
-            {% endif %}
         </div>
     </div>
     
     <div class="flex-1 overflow-y-auto mb-4 pr-2 space-y-6" id="chat-messages">
-        {% if is_new %}
-            <!-- Welcome message -->
-            <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                    <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+        <!-- Welcome message -->
+        <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+            </div>
+            <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                <div class="flex justify-between items-start mb-1">
+                    <p class="text-[#1B5E20] mr-3">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                    <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                        <i data-lucide="volume-2" class="h-5 w-5"></i>
+                    </button>
                 </div>
-                <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                    <div class="flex justify-between items-start mb-1">
-                        <p class="text-[#1B5E20] mr-3">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
-                        <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
-                            <i data-lucide="volume-2" class="h-5 w-5"></i>
-                        </button>
-                    </div>
-                    <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
-                    
-                    {% if user.is_authenticated %}
-                    <!-- Skip personalization choice for logged in users -->
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            // Enable the chat input for authenticated users immediately
-                            const userInput = document.getElementById('user-input');
-                            if(userInput) {
-                                userInput.disabled = false;
-                                userInput.placeholder = "Type your message here...";
-                                userInput.focus();
-                            }
-                        });
-                    </script>
-                    {% else %}
-                    <p class="text-[#1B5E20] mt-4">Would you like to stay as a guest or have a more personalized experience?</p>
-                    <p class="text-[#388E3C] mt-2">Personalized experiences allow us to tailor recommendations specifically for you, based on your preferences and history.</p>
-                    <div class="flex gap-4 mt-4">
-                        <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
-                            <i data-lucide="user" class="h-5 w-5"></i>
-                            <span>Stay as Guest</span>
-                        </button>
-                        <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
-                            <i data-lucide="user-check" class="h-5 w-5"></i>
-                            <span>Personalized</span>
-                        </button>
-                    </div>
-                    {% endif %}
+                <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
+                
+                <p class="text-[#1B5E20] mt-4">Would you like to stay as a guest or get a more personalized experience?</p>
+                <p class="text-[#388E3C] mt-2">Personalized experiences allow us to tailor recommendations specifically for you, based on your preferences.</p>
+                <div class="flex gap-4 mt-4">
+                    <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                        <i data-lucide="user" class="h-5 w-5"></i>
+                        <span>Stay as Guest</span>
+                    </button>
+                    <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                        <i data-lucide="user-check" class="h-5 w-5"></i>
+                        <span>Personalized</span>
+                    </button>
                 </div>
             </div>
-        {% else %}
-            {% for message in messages %}
-                <div class="flex items-start {% if message.sender == 'user' %}justify-end{% endif %} space-x-3">
-                    {% if message.sender == 'bot' %}
-                        <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                            <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
-                        </div>
-                        <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                            <div class="flex justify-between items-start">
-                                <p class="text-[#1B5E20] mr-3">{{ message.content }}</p>
-                                <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
-                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
-                                </button>
-                            </div>
-                            <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
-                        </div>
-                    {% else %}
-                        <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
-                            <div class="flex justify-between items-start">
-                                <p class="text-[#1565C0] mr-3">{{ message.content }}</p>
-                                <button class="tts-btn text-[#1565C0] hover:text-[#0D47A1] transition-colors focus:outline-none" title="Listen to this message">
-                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
-                                </button>
-                            </div>
-                            <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
-                        </div>
-                        <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                            <i data-lucide="user" class="h-6 w-6 text-[#1565C0]"></i>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        {% endif %}
+        </div>
     </div>
     
     <div class="flex-shrink-0 border-t border-gray-100 pt-4 mt-auto">
@@ -101,7 +50,7 @@
             {% csrf_token %}
             <div class="relative flex-1">
                 <input type="text" id="user-input" class="w-full px-5 py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#43A047] pr-12" 
-                       placeholder="Type your message here..." required {% if not user.is_authenticated and is_new %}disabled{% endif %}>
+                       placeholder="Please select an option above..." disabled>
                 <button type="submit" class="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#43A047] text-white p-2 rounded-full hover:bg-[#388E3C] transition">
                     <i data-lucide="send" class="h-5 w-5"></i>
                 </button>
@@ -163,9 +112,8 @@
         const chatMessages = document.getElementById('chat-messages');
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        // Get conversation ID if it exists
-        let conversationId = "{{ conversation.id|default:'' }}";
-        conversationId = conversationId === "" ? null : conversationId;
+        // Session ID for guest users
+        let sessionId = localStorage.getItem('guest_session_id') || null;
         
         // Track personalization state
         let currentPersonalizationStep = null;
@@ -190,6 +138,15 @@
                 userInput.disabled = false;
                 userInput.placeholder = "Type your message here...";
                 userInput.focus();
+
+                // Check if there's a query from session storage
+                const storedQuery = sessionStorage.getItem('initialQuery');
+                if (storedQuery) {
+                    // Set the initial query in the input
+                    userInput.value = storedQuery;
+                    // Clear the sessionStorage so it's only used once
+                    sessionStorage.removeItem('initialQuery');
+                }
                 
                 scrollToBottom();
             });
@@ -198,6 +155,32 @@
                 addMessage("Great! Let's personalize your experience. I'll ask you a few questions.", 'bot', new Date().toTimeString().slice(0, 5));
                 startPersonalization();
             });
+        }
+        
+        // Check if there's an initial query from the URL
+        const initialQuery = "{{ initial_query|escapejs }}";
+        if (initialQuery && initialQuery !== "") {
+            // Wait a bit to ensure everything is loaded before processing the initial query
+            setTimeout(function() {
+                // Force the guest path for initial queries
+                guestOption.click();
+                
+                // Set the initial query in the input
+                userInput.value = initialQuery;
+                
+                // Submit the form
+                chatForm.dispatchEvent(new Event('submit'));
+            }, 500);
+        } else {
+            // Check for query in session storage
+            const storedQuery = sessionStorage.getItem('initialQuery');
+            if (storedQuery) {
+                // Wait a bit to ensure everything is loaded
+                setTimeout(function() {
+                    // Force the guest path
+                    guestOption.click();
+                }, 500);
+            }
         }
         
         // TTS Button Functionality
@@ -413,7 +396,7 @@
             // Add typing indicator to show that the system is processing
             addTypingIndicator();
             
-            fetch('{% url "Core:send_message" %}', {
+            fetch('{% url "GuestChat:send_message" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -421,7 +404,7 @@
                 },
                 body: JSON.stringify({
                     message: answer,
-                    conversation_id: conversationId,
+                    session_id: sessionId,
                     message_type: 'answer',
                     preference_key: preferenceKey,
                     is_personalization: true
@@ -440,18 +423,16 @@
                 console.log("Personalization response:", data);
                 
                 if (data.status === 'success') {
-                    // Update conversation ID if this is a new conversation
-                    if (!conversationId) {
-                        conversationId = data.conversation_id;
-                        
-                        // Update URL to include conversation ID
-                        history.pushState(null, '', `/core/chat/${conversationId}/`);
+                    // Store session ID if it's new
+                    if (!sessionId) {
+                        sessionId = data.session_id;
+                        localStorage.setItem('guest_session_id', sessionId);
                     }
                     
                     // If the server sent a bot response to show
                     if (data.bot_response) {
                         console.log("Adding bot response:", data.bot_response);
-                        addMessage(data.bot_response, 'bot', data.timestamp);
+                        addMessage(data.bot_response, 'bot', data.timestamp || new Date().toTimeString().slice(0, 5));
                         scrollToBottom();
                     }
                 } else {
@@ -483,7 +464,7 @@
             addTypingIndicator();
             
             // Send message to server using fetch API
-            fetch('{% url "Core:send_message" %}', {
+            fetch('{% url "GuestChat:send_message" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -491,7 +472,7 @@
                 },
                 body: JSON.stringify({
                     message: message,
-                    conversation_id: conversationId,
+                    session_id: sessionId,
                     message_type: currentPersonalizationStep ? 'answer' : 'general',
                     preference_key: currentPersonalizationStep
                 })
@@ -507,16 +488,14 @@
                 removeTypingIndicator();
                 
                 if (data.status === 'success') {
-                    // Update conversation ID if this is a new conversation
-                    if (!conversationId) {
-                        conversationId = data.conversation_id;
-                        
-                        // Update URL to include conversation ID
-                        history.pushState(null, '', `/core/chat/${conversationId}/`);
+                    // Store session ID if it's new
+                    if (!sessionId) {
+                        sessionId = data.session_id;
+                        localStorage.setItem('guest_session_id', sessionId);
                     }
                     
                     // Add bot response to UI
-                    addMessage(data.bot_response, 'bot', data.timestamp);
+                    addMessage(data.bot_response, 'bot', data.timestamp || new Date().toTimeString().slice(0, 5));
                     
                     // Scroll to bottom
                     scrollToBottom();

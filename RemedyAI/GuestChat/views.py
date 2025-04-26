@@ -1,8 +1,6 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .models import Conversation, Message, Herb, Profile, UserPreferences
+from Core.models import Conversation, Message, UserPreferences
 from django.db.models import Q
 import json
 import logging
@@ -32,7 +30,7 @@ if app_dir not in sys.path:
 rag_path = os.path.join(app_dir, "RAG.py")
 retriever_path = os.path.join(app_dir, "retriever.py")
 
-# Helper function to load the AI modules
+# Helper function to load the AI modules - copied from Core views
 def load_ai_modules():
     try:
         # Check if files exist
@@ -136,84 +134,51 @@ def load_ai_modules():
         logger.error(traceback.format_exc())
         return None, None
 
-@login_required
-def dashboard(request):
-    """Main dashboard view for authenticated users with chat history and new chat option"""
-    # Get real conversations for the current user
-    conversations = request.user.conversations.all()[:5]  # Get 5 most recent conversations
-    
-    context = {
-        'title': 'Dashboard - Natural Remedy Finder',
-        'chat_history': [
-            {
-                'id': conv.id,
-                'title': conv.title,
-                'date': conv.updated_at.strftime('%Y-%m-%d'),
-                'preview': conv.get_preview()
-            } for conv in conversations
-        ]
-    }
-    return render(request, 'Core/dashboard.html', context)
-
-@login_required
-def chat(request, chat_id=None):
-    """View for starting a new chat or continuing an existing one"""
+def guest_chat(request):
+    """View for guest users to chat without logging in"""
+    # Redirect authenticated users to the Core chat
+    if request.user.is_authenticated:
+        return redirect('Core:new_chat')
+        
     initial_query = request.GET.get('query', '')
     
-    if chat_id:
-        # Get existing conversation
-        conversation = get_object_or_404(Conversation, id=chat_id, user=request.user)
-        messages_list = conversation.messages.all()
-    else:
-        # This is a new conversation
-        conversation = None
-        messages_list = []
-    
-    # Check if user has preferences
-    has_preferences = hasattr(request.user, 'preferences') and request.user.preferences is not None
-    
     context = {
-        'title': 'Chat - Natural Remedy Finder',
-        'conversation': conversation,
-        'chat_id': chat_id,
-        'is_new': chat_id is None,
-        'messages': messages_list,
-        'has_preferences': has_preferences,
+        'title': 'Guest Chat - Natural Remedy Finder',
+        'is_new': True,
         'initial_query': initial_query
     }
-    return render(request, 'Core/chat.html', context)
+    return render(request, 'GuestChat/guest_chat.html', context)
 
-@login_required
 def send_message(request):
-    """API endpoint for sending/receiving chat messages"""
+    """API endpoint for sending/receiving chat messages for guest users"""
     if request.method == 'POST':
         try:
             # Add debug logging
-            logger.debug("Received message request")
+            logger.debug("Received message request from guest")
             
             # Better content type handling
             try:
                 data = json.loads(request.body)
                 user_message = data.get('message')
-                conversation_id = data.get('conversation_id')
+                session_id = data.get('session_id')
                 
                 # Get personalization data if present
                 message_type = data.get('message_type', 'general')
                 preference_key = data.get('preference_key')
                 is_personalization = data.get('is_personalization', False)
                 
-                logger.debug(f"Parsed JSON data: message={user_message}, conversation_id={conversation_id}, " 
+                logger.debug(f"Parsed JSON data: message={user_message}, session_id={session_id}, " 
                             f"message_type={message_type}, preference_key={preference_key}, "
                             f"is_personalization={is_personalization}")
             except json.JSONDecodeError:
                 # Fallback to form data
                 user_message = request.POST.get('message')
-                conversation_id = request.POST.get('conversation_id')
+                session_id = request.POST.get('session_id')
                 message_type = request.POST.get('message_type', 'general')
                 preference_key = request.POST.get('preference_key')
                 is_personalization = request.POST.get('is_personalization', False) == 'true'
                 
-                logger.debug(f"Parsed FORM data: message={user_message}, conversation_id={conversation_id}, " 
+                logger.debug(f"Parsed FORM data: message={user_message}, session_id={session_id}, " 
                             f"message_type={message_type}, preference_key={preference_key}, "
                             f"is_personalization={is_personalization}")
             
@@ -221,42 +186,23 @@ def send_message(request):
             if not user_message:
                 return JsonResponse({'status': 'error', 'message': 'No message provided'}, status=400)
             
-            # Create new conversation if needed
-            if not conversation_id:
-                conversation = Conversation.objects.create(
-                    user=request.user,
-                    title=user_message[:50] + ("..." if len(user_message) > 50 else "")
-                )
-                logger.debug(f"Created new conversation with ID {conversation.id}")
-            else:
-                try:
-                    conversation = Conversation.objects.get(id=conversation_id, user=request.user)
-                    logger.debug(f"Retrieved conversation with ID {conversation.id}")
-                except Conversation.DoesNotExist:
-                    return JsonResponse({'status': 'error', 'message': 'Conversation not found'}, status=404)
-            
-            # Save user message
-            user_msg = Message.objects.create(
-                conversation=conversation,
-                sender='user',
-                content=user_message,
-                message_type=message_type,
-                preference_key=preference_key
-            )
-            logger.debug(f"Created user message: {user_msg.id}, content: {user_message[:30]}...")
+            # Create or retrieve a session ID
+            if not session_id:
+                session_id = str(uuid.uuid4())
+                logger.debug(f"Created new session ID: {session_id}")
             
             # Handle personalization responses
             if is_personalization and preference_key:
                 logger.info(f"Processing personalization response for key: {preference_key}, value: {user_message}")
                 
-                # Get or create user preferences
+                # Get or create session preferences
                 preferences, created = UserPreferences.objects.get_or_create(
-                    user=request.user
+                    session_id=session_id
                 )
                 if created:
-                    logger.info(f"Created new preferences for user {request.user.username}")
+                    logger.info(f"Created new preferences for session {session_id}")
                 else:
-                    logger.info(f"Using existing preferences for user {request.user.username}")
+                    logger.info(f"Using existing preferences for session {session_id}")
                 
                 # Update preference based on key
                 if preference_key == 'age_group':
@@ -297,12 +243,9 @@ def send_message(request):
                     preferences.other_allergies = user_message
                     logger.debug(f"Set other_allergies to {user_message}")
                 
-                # Save preferences and link to conversation
+                # Save preferences
                 preferences.save()
-                conversation.preferences = preferences
-                conversation.is_personalized = True
-                conversation.save()
-                logger.info(f"Saved preferences and updated conversation {conversation.id}")
+                logger.info(f"Saved preferences for session {session_id}")
                 
                 # Prepare next question or completion message
                 if preference_key == 'age_group':
@@ -317,8 +260,8 @@ def send_message(request):
                     # Just return success, frontend will handle the specific allergy input
                     return JsonResponse({
                         'status': 'success',
-                        'conversation_id': conversation.id,
-                        'timestamp': user_msg.timestamp.strftime('%H:%M'),
+                        'session_id': session_id,
+                        'timestamp': '00:00',
                     })
                 elif preference_key == 'other_allergies' or preference_key == 'allergies':
                     bot_message = "Thank you for providing your information! I'll use this to give you more personalized recommendations."
@@ -329,21 +272,11 @@ def send_message(request):
                     next_preference = None
                     options = []
                 
-                # Save bot response
-                bot_response = Message.objects.create(
-                    conversation=conversation,
-                    sender='bot',
-                    content=bot_message,
-                    message_type='question' if next_preference else 'general',
-                    preference_key=next_preference
-                )
-                logger.debug(f"Created bot response: {bot_response.id}, content: {bot_message[:30]}...")
-                
                 return JsonResponse({
                     'status': 'success',
-                    'conversation_id': conversation.id,
+                    'session_id': session_id,
                     'bot_response': bot_message,
-                    'timestamp': bot_response.timestamp.strftime('%H:%M'),
+                    'timestamp': '00:00',
                     'is_personalization': next_preference is not None,
                     'preference_key': next_preference,
                     'options': options
@@ -356,24 +289,10 @@ def send_message(request):
                 logger.error("AI modules could not be loaded")
                 bot_message = "I apologize, but I encountered an issue with the AI system. Please try again later."
             else:
-                # Get conversation history for AI_respond
-                history = []
-                if conversation_id:
-                    # Get previous messages for this conversation
-                    previous_messages = Message.objects.filter(conversation=conversation).order_by('timestamp')
-                    
-                    # Format messages as (human, ai) tuples for history
-                    for i in range(0, len(previous_messages) - 1, 2):
-                        if i+1 < len(previous_messages):
-                            if previous_messages[i].sender == 'user' and previous_messages[i+1].sender == 'bot':
-                                history.append((previous_messages[i].content, previous_messages[i+1].content))
-                
-                logger.debug(f"Collected {len(history)} historical message pairs")
-                
-                # If user has preferences, we can add those to the user's query
+                # Get preferences for the session if they exist
                 preferences_text = ""
                 try:
-                    preferences = request.user.preferences
+                    preferences = UserPreferences.objects.filter(session_id=session_id).first()
                     if preferences:
                         if preferences.age_group:
                             age_mapping_reverse = {
@@ -408,7 +327,7 @@ def send_message(request):
                             
                         logger.info(f"Added user preferences to query: {preferences_text}")
                 except Exception as e:
-                    logger.warning(f"Could not get preferences for user: {str(e)}")
+                    logger.warning(f"Could not get preferences for session: {str(e)}")
                 
                 try:
                     # Call the AI_respond function with context-enhanced query
@@ -420,7 +339,7 @@ def send_message(request):
                     bot_message = AI_respond(
                         human_prompt=enhanced_query,
                         kb=kb,
-                        history=history,
+                        history=[], # No history for guest sessions
                         top_k=3  # You can adjust this parameter
                     )
                     logger.info(f"Received response from AI_respond: {bot_message[:100]}...")
@@ -429,119 +348,16 @@ def send_message(request):
                     logger.error(traceback.format_exc())
                     bot_message = "I apologize, but I encountered an issue generating a response. Please try again."
             
-            # Save bot response
-            bot_response = Message.objects.create(
-                conversation=conversation,
-                sender='bot',
-                content=bot_message,
-                message_type='recommendation'
-            )
-            logger.debug(f"Created bot response: {bot_response.id}, content: {bot_message[:30]}...")
-            
             return JsonResponse({
                 'status': 'success',
-                'conversation_id': conversation.id,
+                'session_id': session_id,
                 'bot_response': bot_message,
-                'timestamp': bot_response.timestamp.strftime('%H:%M')
+                'timestamp': '00:00'
             })
             
         except Exception as e:
-            logger.error(f"Error in send_message: {str(e)}")
+            logger.error(f"Error in guest send_message: {str(e)}")
             logger.error(traceback.format_exc())
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
     return JsonResponse({'status': 'error', 'message': 'Only POST method is allowed'}, status=405)
-
-# Helper function to get or create session preferences
-def get_session_preferences(request):
-    """Get or create preferences for the current session"""
-    if request.user.is_authenticated:
-        preferences, created = UserPreferences.objects.get_or_create(user=request.user)
-        return preferences
-    
-    # For non-authenticated users, create session-based preferences
-    session_id = request.session.get('preferences_id')
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        request.session['preferences_id'] = session_id
-    
-    preferences, created = UserPreferences.objects.get_or_create(
-        session_id=session_id
-    )
-    return preferences
-
-@login_required
-def profile(request):
-    """User profile view"""
-    # Ensure profile exists
-    user_profile, created = Profile.objects.get_or_create(user=request.user)
-    
-    if request.method == 'POST':
-        # Handle profile update
-        request.user.first_name = request.POST.get('first_name', request.user.first_name)
-        request.user.last_name = request.POST.get('last_name', request.user.last_name)
-        request.user.email = request.POST.get('email', request.user.email)
-        request.user.save()
-        
-        user_profile.bio = request.POST.get('bio', user_profile.bio)
-        
-        if 'profile_image' in request.FILES:
-            user_profile.profile_image = request.FILES['profile_image']
-        
-        user_profile.save()
-        messages.success(request, 'Your profile was updated successfully!')
-        return redirect('Core:profile')
-    
-    context = {
-        'title': 'My Profile - Natural Remedy Finder',
-        'user_profile': user_profile,
-    }
-    return render(request, 'Core/profile.html', context)
-
-@login_required
-def encyclopedia(request):
-    """Herb encyclopedia view"""
-    query = request.GET.get('q', '')
-    
-    if query:
-        herbs = Herb.objects.filter(
-            Q(name__icontains=query) | 
-            Q(scientific_name__icontains=query) | 
-            Q(description__icontains=query) |
-            Q(benefits__icontains=query)
-        ).distinct()
-    else:
-        herbs = Herb.objects.all()
-    
-    context = {
-        'title': 'Herb Encyclopedia - Natural Remedy Finder',
-        'herbs': herbs,
-        'query': query
-    }
-    return render(request, 'Core/encyclopedia.html', context)
-
-@login_required
-def herb_detail(request, herb_id):
-    """View for detailed herb information"""
-    herb = get_object_or_404(Herb, id=herb_id)
-    
-    context = {
-        'title': f'{herb.name} - Natural Remedy Finder',
-        'herb': herb
-    }
-    return render(request, 'Core/herb_detail.html', context)
-
-@login_required
-def delete_chat(request, chat_id):
-    """Delete a conversation/chat"""
-    try:
-        conversation = get_object_or_404(Conversation, id=chat_id, user=request.user)
-        title = conversation.title
-        conversation.delete()
-        messages.success(request, f'Chat "{title}" has been deleted successfully.')
-    except Exception as e:
-        logger.error(f"Error deleting conversation {chat_id}: {str(e)}")
-        messages.error(request, 'An error occurred while trying to delete the chat.')
-    
-    return redirect('Core:dashboard')
-

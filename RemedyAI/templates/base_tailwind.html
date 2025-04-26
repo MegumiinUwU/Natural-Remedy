@@ -149,7 +149,19 @@
                     <div id="profile-dropdown-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden">
                         <a href="{% url 'Core:dashboard' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Dashboard</a>
                         <a href="{% url 'Core:profile' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Profile</a>
-                        <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-[#2E7D32] hover:bg-[#E8F5E9]">Logout</a>
+                        <div class="p-1">
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="flex items-center px-3 py-2 rounded-md text-sm text-[#2E7D32] hover:bg-[#E8F5E9] transition-colors w-full text-left">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="log-out" class="lucide lucide-log-out h-4 w-4 mr-2">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" x2="9" y1="12" y2="12"></line>
+                                    </svg>
+                                    <span>Logout</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 {% else %}
@@ -179,7 +191,19 @@
                 {% if user.is_authenticated %}
                 <a href="{% url 'Core:dashboard' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Dashboard</a>
                 <a href="{% url 'Core:profile' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Profile</a>
-                <a href="{% url 'logout' %}" class="text-[#2E7D32] hover:text-[#43A047] transition-colors py-2">Logout</a>
+                <div class="py-1">
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="flex items-center py-2 rounded-md text-[#2E7D32] hover:text-[#43A047] transition-colors w-full text-left">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="log-out" class="h-5 w-5 mr-2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" x2="9" y1="12" y2="12"></line>
+                            </svg>
+                            Logout
+                        </button>
+                    </form>
+                </div>
                 {% else %}
                 <div class="flex flex-col sm:flex-row gap-2 py-2">
                     <a href="{% url 'login' %}" class="px-4 py-2 rounded-md text-[#43A047] border border-[#43A047] text-center">
@@ -195,7 +219,7 @@
     </header>
 
     <!-- Messages -->
-    {% if messages %}
+    <!-- {% if messages %}
     <div class="container mx-auto px-4 pt-32">
         {% for message in messages %}
         <div class="flex items-center p-4 mb-4 text-sm {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% elif message.tags == 'info' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700{% endif %} rounded-lg" role="alert">
@@ -206,7 +230,7 @@
         </div>
         {% endfor %}
     </div>
-    {% endif %}
+    {% endif %} -->
 
     <!-- Main Content -->
     <main>

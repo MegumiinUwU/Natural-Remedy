@@ -32,16 +32,20 @@
                 </p>
 
                 <div class="relative max-w-xl mx-auto mb-12">
-                    <div class="relative">
-                        <input
-                            type="text"
-                            placeholder="Describe your symptoms or wellness goals..."
-                            class="w-full px-6 py-4 rounded-full shadow-md border border-[#C8E6C9] focus:outline-none focus:ring-2 focus:ring-[#66BB6A] text-gray-700 pr-12"
-                        />
-                        <button class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#43A047] text-white p-2 rounded-full hover:bg-[#388E3C] transition">
-                            <i data-lucide="search" class="h-6 w-6"></i>
-                        </button>
-                    </div>
+                    <form id="chat-query-form" action="{% url 'Core:new_chat' %}" method="GET">
+                        <div class="relative">
+                            <input
+                                type="text"
+                                name="query"
+                                id="chat-query"
+                                placeholder="Describe your symptoms or wellness goals..."
+                                class="w-full px-6 py-4 rounded-full shadow-md border border-[#C8E6C9] focus:outline-none focus:ring-2 focus:ring-[#66BB6A] text-gray-700 pr-12"
+                            />
+                            <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#43A047] text-white p-2 rounded-full hover:bg-[#388E3C] transition">
+                                <i data-lucide="send" class="h-6 w-6"></i>
+                            </button>
+                        </div>
+                    </form>
 
                     <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex items-center text-[#43A047] text-sm fade-in" style="animation-delay: 1s;">
                         <i data-lucide="message-circle" class="w-4 h-4 mr-2"></i>
@@ -114,8 +118,33 @@
             <p class="text-xl mb-8 text-[#A5D6A7]">{{ cta_description }}</p>
             <div class="flex justify-center gap-4 flex-wrap">
                 <a href="{% url 'register' %}" class="bg-white text-[#1B5E20] px-8 py-3 rounded-md font-bold hover:bg-[#E8F5E9] transition-colors">Get Started</a>
+                <a href="{% url 'GuestChat:guest_chat' %}" class="bg-[#388E3C] text-white px-8 py-3 rounded-md font-bold hover:bg-[#2E7D32] transition-colors">Try as Guest</a>
                 <a href="#features" class="border border-white px-8 py-3 rounded-md font-bold hover:bg-white/10 transition-colors">Learn More</a>
             </div>
         </div>
     </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle the chat form submission
+    const chatForm = document.getElementById('chat-query-form');
+    const chatInput = document.getElementById('chat-query');
+    
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const query = chatInput.value.trim();
+      if (!query) return;
+      
+      // Store the query in sessionStorage for the chat page to use
+      sessionStorage.setItem('initialQuery', query);
+      
+      // Redirect to the chat page without sending the query as a URL parameter
+      // This prevents the query from being processed automatically by the AI
+      window.location.href = "{% url 'GuestChat:guest_chat' %}";
+    });
+  });
+</script>
 {% endblock %}
