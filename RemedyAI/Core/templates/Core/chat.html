@@ -15,9 +15,25 @@
                     <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                 </div>
                 <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                    <p class="text-[#1B5E20]">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-[#1B5E20] mr-3">Hello! I'm your Natural Remedy Assistant. How can I help you today?</p>
+                        <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                            <i data-lucide="volume-2" class="h-5 w-5"></i>
+                        </button>
+                    </div>
                     <p class="text-[#388E3C] mt-2">You can describe your symptoms or ask about natural remedies, and I'll suggest appropriate herbs and treatments.</p>
-                    <p class="text-[#1B5E20] mt-4">Let's get started with your personalized experience!</p>
+                    <p class="text-[#1B5E20] mt-4">Would you like to stay as a guest or have a more personalized experience?</p>
+                    <p class="text-[#388E3C] mt-2">Personalized experiences allow us to tailor recommendations specifically for you, based on your preferences and history.</p>
+                    <div class="flex gap-4 mt-4">
+                        <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user" class="h-5 w-5"></i>
+                            <span>Stay as Guest</span>
+                        </button>
+                        <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
+                            <i data-lucide="user-check" class="h-5 w-5"></i>
+                            <span>Personalized</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         {% else %}
@@ -28,12 +44,22 @@
                             <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                         </div>
                         <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                            <p class="text-[#1B5E20]">{{ message.content }}</p>
+                            <div class="flex justify-between items-start">
+                                <p class="text-[#1B5E20] mr-3">{{ message.content }}</p>
+                                <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
+                                </button>
+                            </div>
                             <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
                     {% else %}
                         <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
-                            <p class="text-[#1565C0]">{{ message.content }}</p>
+                            <div class="flex justify-between items-start">
+                                <p class="text-[#1565C0] mr-3">{{ message.content }}</p>
+                                <button class="tts-btn text-[#1565C0] hover:text-[#0D47A1] transition-colors focus:outline-none" title="Listen to this message">
+                                    <i data-lucide="volume-2" class="h-5 w-5"></i>
+                                </button>
+                            </div>
                             <span class="text-xs text-gray-500 mt-1 block">{{ message.timestamp|time:"H:i" }}</span>
                         </div>
                         <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
@@ -107,152 +133,408 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
         const chatMessages = document.getElementById('chat-messages');
-
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Get conversation ID if it exists
+        let conversationId = "{{ conversation.id|default:'' }}";
+        conversationId = conversationId === "" ? null : conversationId;
+        
+        // Track personalization state
+        let currentPersonalizationStep = null;
+        let personalizationComplete = false;
+        
+        // Scroll to bottom of chat on load
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Initialize TTS buttons
+        initTtsButtons();
+        
+        // Set up guest and personalized option buttons
+        const guestOption = document.getElementById('guest-option');
+        const personalizedOption = document.getElementById('personalized-option');
+        
+        if (guestOption && personalizedOption) {
+            guestOption.addEventListener('click', function() {
+                addMessage("You chose to stay as a guest. Feel free to ask your questions!", 'bot', new Date().toTimeString().slice(0, 5));
+                personalizationComplete = true;
+                
+                // Enable the chat input
+                userInput.disabled = false;
+                userInput.placeholder = "Type your message here...";
+                userInput.focus();
+                
+                scrollToBottom();
+            });
+            
+            personalizedOption.addEventListener('click', function() {
+                addMessage("Great! Let's personalize your experience. I'll ask you a few questions.", 'bot', new Date().toTimeString().slice(0, 5));
+                startPersonalization();
+            });
+        }
+        
+        // TTS Button Functionality
+        function initTtsButtons() {
+            document.querySelectorAll('.tts-btn').forEach(btn => {
+                if (!btn.hasAttribute('data-initialized')) {
+                    btn.setAttribute('data-initialized', 'true');
+                    btn.addEventListener('click', handleTtsClick);
+                }
+            });
+        }
+        
+        function handleTtsClick(e) {
+            const button = e.currentTarget;
+            const messageText = button.closest('div').querySelector('p').textContent;
+            
+            // Visual feedback - change icon to indicate playing
+            const icon = button.querySelector('i');
+            const originalIcon = icon.getAttribute('data-lucide');
+            
+            // Animate button to show it's playing
+            button.classList.add('animate-pulse');
+            icon.setAttribute('data-lucide', 'volume-x');
+            
+            // Update the icon
+            lucide.createIcons({
+                attrs: {
+                    class: ["h-5", "w-5"]
+                },
+                elementQuerySelector: button
+            });
+            
+            // Simulate TTS duration (would be replaced by actual TTS implementation)
+            setTimeout(() => {
+                // Restore original state
+                button.classList.remove('animate-pulse');
+                icon.setAttribute('data-lucide', 'volume-2');
+                
+                // Update the icon back
+                lucide.createIcons({
+                    attrs: {
+                        class: ["h-5", "w-5"]
+                    },
+                    elementQuerySelector: button
+                });
+                
+                console.log("Would play TTS for text:", messageText);
+            }, 2000);
+        }
+        
         function startPersonalization() {
+            // Define personalization questions with preference keys
             const questions = [
-                { question: "What is your age?", type: "input", placeholder: "Enter your age" },
-                { question: "What is your height (in cm)?", type: "input", placeholder: "Enter your height" },
-                { question: "What is your weight (in kg)?", type: "input", placeholder: "Enter your weight" },
-                { question: "What is your primary wellness goal?", options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief"] },
-                { question: "Do you have any known allergies?", options: ["None", "Pollen", "Nuts", "Other"] }
+                { 
+                    question: "What is your age group?", 
+                    options: ["Under 18", "18-35", "36-50", "51+"],
+                    preferenceKey: "age_group"
+                },
+                { 
+                    question: "What is your primary wellness goal?", 
+                    options: ["Stress Relief", "Better Sleep", "Digestive Health", "Pain Relief", "Other"],
+                    preferenceKey: "wellness_goal"
+                },
+                { 
+                    question: "Do you have any known allergies?", 
+                    options: ["None", "Pollen", "Nuts", "Other"],
+                    preferenceKey: "allergies"
+                }
             ];
-
+            
             let currentQuestionIndex = 0;
-
+            
             function askNextQuestion() {
                 if (currentQuestionIndex < questions.length) {
                     const currentQuestion = questions[currentQuestionIndex];
+                    currentPersonalizationStep = currentQuestion.preferenceKey;
+                    console.log("Asking question about:", currentPersonalizationStep);
+                    
                     const questionDiv = document.createElement('div');
                     questionDiv.className = 'flex items-start space-x-3';
-
-                    if (currentQuestion.type === "input") {
-                        questionDiv.innerHTML = `
-                            <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                                <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                    questionDiv.innerHTML = `
+                        <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                            <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                        </div>
+                        <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                            <p class="text-[#1B5E20]">${currentQuestion.question}</p>
+                            <div class="flex flex-wrap gap-4 mt-4 option-buttons-container">
+                                ${currentQuestion.options.map(option => 
+                                    `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition' 
+                                    data-preference-key="${currentQuestion.preferenceKey}" 
+                                    data-option-value="${option}">${option}</button>`
+                                ).join('')}
                             </div>
-                            <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                                <p class="text-[#1B5E20]">${currentQuestion.question}</p>
-                                <input type="text" class="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md" placeholder="${currentQuestion.placeholder}" id="user-input-${currentQuestionIndex}">
-                                <button class='mt-4 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition' id='submit-input-${currentQuestionIndex}'>Submit</button>
-                            </div>
-                        `;
-
-                        chatMessages.appendChild(questionDiv);
-
-                        document.getElementById(`submit-input-${currentQuestionIndex}`).addEventListener('click', function() {
-                            const userInput = document.getElementById(`user-input-${currentQuestionIndex}`).value;
-                            if (userInput.trim()) {
-                                addMessage(userInput, 'user', new Date().toTimeString().slice(0, 5));
-                                currentQuestionIndex++;
-                                askNextQuestion();
+                        </div>
+                    `;
+                    chatMessages.appendChild(questionDiv);
+                    
+                    // Initialize Lucide icons in the newly added question
+                    lucide.createIcons({
+                        attrs: {
+                            class: ["h-6", "w-6"]
+                        },
+                        elementQuerySelector: questionDiv
+                    });
+                    
+                    const optionButtons = questionDiv.querySelectorAll('.option-btn');
+                    optionButtons.forEach(button => {
+                        button.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const selectedOption = this.textContent.trim();
+                            const preferenceKey = this.dataset.preferenceKey;
+                            
+                            console.log("Selected option:", selectedOption, "for key:", preferenceKey);
+                            
+                            // Disable all option buttons in this container to prevent multiple selections
+                            const buttonContainer = this.closest('.option-buttons-container');
+                            buttonContainer.querySelectorAll('.option-btn').forEach(btn => {
+                                btn.disabled = true;
+                                btn.classList.add('opacity-50');
+                            });
+                            
+                            // Highlight the selected button
+                            this.classList.remove('opacity-50');
+                            this.classList.add('ring-2', 'ring-white');
+                            
+                            // Add the user's response to the chat
+                            addMessage(selectedOption, 'user', new Date().toTimeString().slice(0, 5));
+                            
+                            // Send the personalization data to the server
+                            sendPersonalizationResponse(selectedOption, preferenceKey);
+                            
+                            // If this is "Other" for allergies, prompt for more details
+                            if (preferenceKey === 'allergies' && selectedOption === 'Other') {
+                                // Show input for specifying allergies
+                                const otherInputDiv = document.createElement('div');
+                                otherInputDiv.className = 'flex items-start space-x-3';
+                                otherInputDiv.innerHTML = `
+                                    <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                                        <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                                    </div>
+                                    <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                                        <p class="text-[#1B5E20]">Please specify your allergies:</p>
+                                        <div class="flex flex-wrap gap-4 mt-4">
+                                            <input type="text" id="other-allergy-input" class="border border-gray-300 rounded-md px-3 py-2 w-full" placeholder="Enter your allergies...">
+                                            <button id="submit-other-allergy" class='bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>Submit</button>
+                                        </div>
+                                    </div>
+                                `;
+                                chatMessages.appendChild(otherInputDiv);
+                                
+                                // Initialize Lucide icons
+                                lucide.createIcons({
+                                    attrs: {
+                                        class: ["h-6", "w-6"]
+                                    },
+                                    elementQuerySelector: otherInputDiv
+                                });
+                                
+                                // Set up event listener for the submit button
+                                document.getElementById('submit-other-allergy').addEventListener('click', function() {
+                                    const otherAllergy = document.getElementById('other-allergy-input').value.trim();
+                                    if (otherAllergy) {
+                                        sendPersonalizationResponse(otherAllergy, 'other_allergies');
+                                        addMessage(otherAllergy, 'user', new Date().toTimeString().slice(0, 5));
+                                        currentQuestionIndex++;
+                                        finishPersonalization();
+                                    }
+                                });
+                                
+                                scrollToBottom();
+                                return;
+                            }
+                            
+                            currentQuestionIndex++;
+                            if (currentQuestionIndex < questions.length) {
+                                setTimeout(function() {
+                                    askNextQuestion();
+                                }, 500);
+                            } else {
+                                finishPersonalization();
                             }
                         });
-                    } else {
-                        questionDiv.innerHTML = `
-                            <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                                <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
-                            </div>
-                            <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                                <p class="text-[#1B5E20]">${currentQuestion.question}</p>
-                                <div class="flex gap-4 mt-4">
-                                    ${currentQuestion.options.map(option => `<button class='option-btn bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition'>${option}</button>`).join('')}
-                                </div>
-                            </div>
-                        `;
-
-                        chatMessages.appendChild(questionDiv);
-
-                        const optionButtons = questionDiv.querySelectorAll('.option-btn');
-                        optionButtons.forEach(button => {
-                            button.addEventListener('click', function() {
-                                addMessage(button.textContent, 'user', new Date().toTimeString().slice(0, 5));
-                                currentQuestionIndex++;
-                                askNextQuestion();
-                            });
-                        });
-                    }
-
+                    });
+                    
                     scrollToBottom();
-                } else {
-                    addMessage("Thank you for providing your details!", 'bot', new Date().toTimeString().slice(0, 5));
-
-                    setTimeout(() => {
-                        const finalQuestionDiv = document.createElement('div');
-                        finalQuestionDiv.className = 'flex items-start space-x-3';
-                        finalQuestionDiv.innerHTML = `
-                            <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
-                                <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
-                            </div>
-                            <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                                <p class="text-[#1B5E20]">Would you like to stay as a guest or have a more personalized experience?</p>
-                                <div class="flex gap-4 mt-4">
-                                    <button id="guest-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
-                                        <i data-lucide="user" class="h-5 w-5"></i>
-                                        <span>Stay as Guest</span>
-                                    </button>
-                                    <button id="personalized-option" class="flex items-center gap-2 bg-[#43A047] text-white px-4 py-2 rounded-md shadow-md hover:bg-[#388E3C] transition">
-                                        <i data-lucide="user-check" class="h-5 w-5"></i>
-                                        <span>Personalized</span>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-
-                        chatMessages.appendChild(finalQuestionDiv);
-
-                        document.getElementById('guest-option').addEventListener('click', function() {
-                            addMessage("You chose to stay as a guest. Your data has been saved.", 'bot', new Date().toTimeString().slice(0, 5));
-                            saveDataToSession();
-                            setTimeout(() => {
-                                chatMessages.innerHTML = '';
-                                addMessage("Your chat has been cleared. Feel free to ask more questions!", 'bot', new Date().toTimeString().slice(0, 5));
-                            }, 2000);
-                        });
-
-                        document.getElementById('personalized-option').addEventListener('click', function() {
-                            addMessage("Redirecting you to the registration page for a personalized experience.", 'bot', new Date().toTimeString().slice(0, 5));
-                            setTimeout(() => {
-                                window.location.href = '/register/';
-                            }, 2000);
-                        });
-
-                        scrollToBottom();
-                    }, 1000);
                 }
             }
-
+            
+            function finishPersonalization() {
+                addMessage("Thank you for providing your details! I'll now give you personalized recommendations based on your preferences.", 'bot', new Date().toTimeString().slice(0, 5));
+                personalizationComplete = true;
+                currentPersonalizationStep = null;
+                
+                // Update the UI to show the chat input is now available
+                userInput.disabled = false;
+                userInput.placeholder = "Type your message here...";
+                userInput.focus();
+                
+                scrollToBottom();
+            }
+            
+            // Start the personalization flow
             askNextQuestion();
+            
+            // Disable the regular chat input until personalization is complete
+            userInput.disabled = true;
+            userInput.placeholder = "Please complete the personalization steps above...";
         }
-
-        function saveDataToSession() {
-            const sessionData = {};
-            document.querySelectorAll('input').forEach(input => {
-                sessionData[input.placeholder] = input.value;
+        
+        function sendPersonalizationResponse(answer, preferenceKey) {
+            console.log("Sending personalization response:", answer, "for key:", preferenceKey);
+            
+            // Add typing indicator to show that the system is processing
+            addTypingIndicator();
+            
+            fetch('{% url "Core:send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    message: answer,
+                    conversation_id: conversationId,
+                    message_type: 'answer',
+                    preference_key: preferenceKey,
+                    is_personalization: true
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                console.log("Personalization response:", data);
+                
+                if (data.status === 'success') {
+                    // Update conversation ID if this is a new conversation
+                    if (!conversationId) {
+                        conversationId = data.conversation_id;
+                        
+                        // Update URL to include conversation ID
+                        history.pushState(null, '', `/core/chat/${conversationId}/`);
+                    }
+                    
+                    // If the server sent a bot response to show
+                    if (data.bot_response) {
+                        console.log("Adding bot response:", data.bot_response);
+                        addMessage(data.bot_response, 'bot', data.timestamp);
+                        scrollToBottom();
+                    }
+                } else {
+                    console.error("Error from server:", data.message);
+                    addSystemMessage("Sorry, there was an error processing your preferences.");
+                }
+            })
+            .catch(error => {
+                removeTypingIndicator();
+                console.error('Error:', error);
+                addSystemMessage("Sorry, there was a network error. Please try again.");
             });
-            document.cookie = `user_data=${JSON.stringify(sessionData)}; path=/;`;
         }
-
-        startPersonalization();
-
+        
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Add user message to UI immediately
+            addMessage(message, 'user', new Date().toTimeString().slice(0, 5));
+            userInput.value = '';
+            
+            // Scroll to bottom
+            scrollToBottom();
+            
+            // Add typing indicator
+            addTypingIndicator();
+            
+            // Send message to server using fetch API
+            fetch('{% url "Core:send_message" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({
+                    message: message,
+                    conversation_id: conversationId,
+                    message_type: currentPersonalizationStep ? 'answer' : 'general',
+                    preference_key: currentPersonalizationStep
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Server responded with status ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                if (data.status === 'success') {
+                    // Update conversation ID if this is a new conversation
+                    if (!conversationId) {
+                        conversationId = data.conversation_id;
+                        
+                        // Update URL to include conversation ID
+                        history.pushState(null, '', `/core/chat/${conversationId}/`);
+                    }
+                    
+                    // Add bot response to UI
+                    addMessage(data.bot_response, 'bot', data.timestamp);
+                    
+                    // Scroll to bottom
+                    scrollToBottom();
+                } else {
+                    console.error("Error from server:", data.message);
+                    addSystemMessage("Sorry, there was an error processing your request.");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                removeTypingIndicator();
+                addSystemMessage("Sorry, there was a network error. Please try again.");
+            });
+        });
+        
         function addMessage(text, sender, time) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `flex items-start ${sender === 'user' ? 'justify-end' : ''} space-x-3`;
-
+            
             if (sender === 'bot') {
                 messageDiv.innerHTML = `
                     <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
                         <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
                     </div>
                     <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
-                        <p class="text-[#1B5E20]">${text}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="text-[#1B5E20] mr-3">${text}</p>
+                            <button class="tts-btn text-[#2E7D32] hover:text-[#1B5E20] transition-colors focus:outline-none" title="Listen to this message">
+                                <i data-lucide="volume-2" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                         <span class="text-xs text-gray-500 mt-1 block">${time}</span>
                     </div>
                 `;
             } else {
                 messageDiv.innerHTML = `
                     <div class="bg-[#E3F2FD] rounded-2xl p-4 max-w-[80%]">
-                        <p class="text-[#1565C0]">${text}</p>
+                        <div class="flex justify-between items-start">
+                            <p class="text-[#1565C0] mr-3">${text}</p>
+                            <button class="tts-btn text-[#1565C0] hover:text-[#0D47A1] transition-colors focus:outline-none" title="Listen to this message">
+                                <i data-lucide="volume-2" class="h-5 w-5"></i>
+                            </button>
+                        </div>
                         <span class="text-xs text-gray-500 mt-1 block">${time}</span>
                     </div>
                     <div class="flex-shrink-0 bg-[#E3F2FD] rounded-full p-2 h-10 w-10 flex items-center justify-center">
@@ -260,17 +542,66 @@
                     </div>
                 `;
             }
-
+            
             chatMessages.appendChild(messageDiv);
-
+            
+            // Initialize Lucide icons in the newly added message
             lucide.createIcons({
                 attrs: {
                     class: ["h-6", "w-6"]
                 },
                 elementQuerySelector: messageDiv
             });
+            
+            // Initialize TTS buttons for the new message
+            initTtsButtons();
         }
-
+        
+        function addSystemMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex justify-center my-4';
+            messageDiv.innerHTML = `
+                <div class="bg-yellow-100 text-yellow-700 rounded-md px-4 py-2 text-sm">
+                    ${text}
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        function addTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'flex items-start space-x-3 typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            
+            typingDiv.innerHTML = `
+                <div class="flex-shrink-0 bg-[#E8F5E9] rounded-full p-2 h-10 w-10 flex items-center justify-center">
+                    <i data-lucide="bot" class="h-6 w-6 text-[#2E7D32]"></i>
+                </div>
+                <div class="bg-[#E8F5E9] rounded-2xl p-4 max-w-[80%]">
+                    <p class="text-[#1B5E20]"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></p>
+                </div>
+            `;
+            
+            chatMessages.appendChild(typingDiv);
+            scrollToBottom();
+            
+            // Initialize Lucide icons in the typing indicator
+            lucide.createIcons({
+                attrs: {
+                    class: ["h-6", "w-6"]
+                },
+                elementQuerySelector: typingDiv
+            });
+        }
+        
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
         function scrollToBottom() {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
