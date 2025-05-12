@@ -8,6 +8,12 @@
 RemedyAI is a web-based platform that connects users with natural, non-chemical remedies based on their health concerns. Our AI-powered chatbot provides personalized recommendations for herbs, natural treatments, and holistic practices tailored to your unique needs.
 
 
+<div align="center">
+ 
+  <a href="https://count.getloli.com/"><img src="https://count.getloli.com/get/@:MegumiinUwU-Natural-Remedy?theme=rule34" alt="visitor count" /></a>
+</div>
+
+
 
 ## 🏆 Hackathon Achievement
 
